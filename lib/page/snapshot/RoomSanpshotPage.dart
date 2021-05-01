@@ -59,9 +59,9 @@ class _RoomSnapshotPageState extends State<RoomSnapshotPage> {
               child: Container(
                 alignment: Alignment.center,
                 child: FeeItemDataTable(
-                  rowHeight: 50,
+                  rowHeight: 63,
                   items: e.items,
-                  fontSize: 15,
+                  fontSize: 14,
                 )
 //                child: _buildTable(e.items)
               ),

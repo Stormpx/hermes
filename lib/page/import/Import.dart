@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_printer/flutter_printer.dart';
 import 'package:hermes/FloatButton.dart';
 import 'package:hermes/InitializingWidget.dart';
 import 'package:hermes/page/import/ImportModel.dart';
@@ -15,6 +19,22 @@ class _ImportState extends State<Import> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController configController = TextEditingController();
 
+
+  void _chooseFile() async{
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+    );
+
+    if(result != null) {
+      Printer.printMapJsonLog(result.files.single.path);
+
+      configController.text=result.files.single.path;
+
+    } else {
+      // User canceled the picker
+    }
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +84,12 @@ class _ImportState extends State<Import> {
                       style: TextStyle(fontSize: 20,),
                       keyboardType: TextInputType.multiline,
                     ),
+                    Container(
+                      child: model.way!=1?null:ElevatedButton(
+                        onPressed: () => _chooseFile(),
+                        child: Text("选择文件"),
+                      ),
+                    )
                   ],
                 )
               )

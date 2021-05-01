@@ -11,12 +11,15 @@ class FeeSnapshot {
   double waterFee;
   double rent;
 
+  double electAmount;
+  double waterAmount;
+
   double total;
 
   List<FeeItem> items;
 
   FeeSnapshot(
-      {this.date,this.electFee, this.waterFee, this.rent, this.total, this.items});
+      {this.date,this.electFee, this.waterFee, this.rent, this.total, this.items,this.electAmount,this.waterAmount});
 
 
 
@@ -28,6 +31,8 @@ class FeeSnapshot {
       electFee: json['electFee'] as double,
       waterFee: json['waterFee'] as double,
       rent: json['rent'] as double,
+      electAmount: json['electAmount'] as double,
+      waterAmount: json['waterAmount'] as double,
       total: json['total'] as double,
       items: (json['items'] as List).map((e) => FeeItem.fromJson(e)).toList(),
     );
@@ -39,12 +44,14 @@ class FeeSnapshot {
         'waterFee': waterFee,
         'rent': rent,
         'total': total,
+    'electAmount': electAmount,
+    'waterAmount':waterAmount,
         'items': items,
       };
 
   @override
   String toString() {
-    return 'FeeSnapshot{electFee: $electFee, waterFee: $waterFee, rent: $rent, total: $total, items: $items}';
+    return 'FeeSnapshot{date: $date, electFee: $electFee, waterFee: $waterFee, rent: $rent, electAmount: $electAmount, waterAmount: $waterAmount, total: $total, items: $items}';
   }
 }
 

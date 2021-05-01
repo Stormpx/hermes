@@ -1,11 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hermes/CardColumnWidget.dart';
 import 'package:hermes/FloatButton.dart';
 import 'package:hermes/FullCoverOpaque.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/services.dart';
-
 import 'Model.dart';
 
 
@@ -27,6 +27,12 @@ class _FloorListPageState extends State<FloorListPage> {
 
   bool _addFloor = false;
 
+
+  @override
+  void initState() {
+    super.initState();
+    // For sharing images coming from outside the app while the app is in the memory
+  }
 
   ///楼层列表
   Widget floorBuilder(){
@@ -64,7 +70,7 @@ class _FloorListPageState extends State<FloorListPage> {
       Scaffold(
 
         resizeToAvoidBottomInset: false,
-        resizeToAvoidBottomPadding: false,
+//        resizeToAvoidBottomPadding: false,
         appBar: AppBar(
           title: Text("楼层列表"),
           actions: <Widget>[

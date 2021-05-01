@@ -1,11 +1,15 @@
 import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flukit/flukit.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:hermes/FeeItemDataTable.dart';
 import 'package:hermes/GreatGradientButton.dart';
 import 'package:hermes/InitializingWidget.dart';
+import 'package:hermes/kit/Util.dart';
 import 'package:hermes/page/room/RoomModel.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -18,6 +22,23 @@ class RoomPage extends StatefulWidget {
 }
 
 class _RoomPageState extends State<RoomPage> {
+  GlobalKey rootWidgetKey = GlobalKey();
+
+  Uint8List _image=null;
+
+  void _captureContent(RoomModel model) async{
+    RenderRepaintBoundary boundary =
+    rootWidgetKey.currentContext.findRenderObject();
+    var image = await boundary.toImage(pixelRatio: 3.0);
+    ByteData byteData = await image.toByteData(format: ImageByteFormat.png);
+    Uint8List pngBytes = byteData.buffer.asUint8List();
+
+
+    model.capturePng(pngBytes);
+
+  }
+
+
   @override
   void initState() {
     super.initState();
@@ -28,12 +49,15 @@ class _RoomPageState extends State<RoomPage> {
     var roomModel = Provider.of<RoomModel>(context);
 
     return Scaffold(
-        resizeToAvoidBottomPadding: true,
+//        resizeToAvoidBottomPadding: true,
         appBar: AppBar(
           title: Text(roomModel.room.name),
           actions: <Widget>[
+            IconButton(icon: Icon(Icons.screen_share),
+                onPressed: ()=>_captureContent(roomModel)),
             IconButton(icon: Icon(Icons.list),
-                onPressed: ()=>roomModel.showSnapshot(context))
+                onPressed: ()=>roomModel.showSnapshot(context)),
+
           ],
         ),
         body: InitializingWidget(
@@ -63,7 +87,7 @@ class _RoomPageState extends State<RoomPage> {
                         CalendarFormat.month: 'Month',
                       },
                       locale: 'zh_CN',
-                      onDaySelected: (d, e) {
+                      onDaySelected: (d, e,h) {
                         roomModel.selectDate(d);
                       },
                       builders: CalendarBuilders(
@@ -110,7 +134,11 @@ class _RoomPageState extends State<RoomPage> {
                       color: Colors.lightBlueAccent,
                       thickness: 2,
                     ),
-                    caclulateResultTestWidget(),
+                    RepaintBoundary(
+                      key: rootWidgetKey,
+                      child: caclulateResultTestWidget(),
+                    ),
+                    _image==null?Container():Image.memory(_image,height: 300,)
                   ],
                 ),
               ),
@@ -171,7 +199,7 @@ class _RoomPageState extends State<RoomPage> {
           )),
       feeTextField(
           roomModel.waterFeeController,
-          "水费 元/升",
+          "水费 元/度",
           Icon(
             Icons.fiber_manual_record,
             color: Colors.white,
@@ -357,6 +385,7 @@ class _RoomPageState extends State<RoomPage> {
 
 
 
+
   double _fontSize=15;
 
   Widget caclulateResultTestWidget() {
@@ -368,22 +397,22 @@ class _RoomPageState extends State<RoomPage> {
     if (fr == null) {
       list = [Text("数据不够算不出来")];
     } else {
-
       list = [
+
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
             Expanded(
                 child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Icon(
-                  Icons.atm,
-                  color: Colors.blueGrey,
-                ),
-                str("电费: "),
-                str("${fr.electFee} 元/度"),
-              ],
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(
+                      Icons.atm,
+                      color: Colors.blueGrey,
+                    ),
+                    str("电费: "),
+                    str("${fr.electFee} 元/度"),
+                  ],
             )),
             Expanded(
                 child: Row(
@@ -394,10 +423,16 @@ class _RoomPageState extends State<RoomPage> {
                       color: Colors.blueGrey,
                     ),
                     str("水费: "),
-                    str("${fr.waterFee} 元/升"),
+                    str("${fr.waterFee} 元/度"),
                   ],
             )),
           ],
+        ),
+        Container(
+          height: 5,
+        ),
+        Container(
+          child: str("${Util.formatDay(fr.date)}"),
         ),
         Container(
           height: 5,
@@ -427,6 +462,7 @@ class _RoomPageState extends State<RoomPage> {
       
       list.add(RaisedButton(
         onPressed: () => roomModel.saveFeeSnapshot(context, fr),
+
         child: Text("保存"),
       ));
       

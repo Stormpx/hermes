@@ -81,6 +81,9 @@ class Model extends ChangeNotifier{
         name: floorNameController.text,
         sort: floorSortController.text.isEmpty?99:int.parse(floorSortController.text)
     );
+    if(f==null||f.name.isEmpty){
+      return;
+    }
 
     if(list.any((element) => element==f)){
       Toast.show("不能添加已存在的item", context,gravity: Toast.BOTTOM);

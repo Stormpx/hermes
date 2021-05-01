@@ -1,7 +1,9 @@
 
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,9 +16,12 @@ import 'package:hermes/page/snapshot/RoomSanpshotPage.dart';
 import 'package:hermes/page/snapshot/RoomSnapshotModel.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:share/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:toast/toast.dart';
+import 'package:uuid/uuid.dart';
+import 'package:uuid/uuid_util.dart';
 
 class RoomModel extends ChangeNotifier{
   static final String DATE_KEY=":date:";
@@ -62,9 +67,11 @@ class RoomModel extends ChangeNotifier{
   void _init() async{
     _preferences=App.sharedPreferences;
 
-    _changeLeft(get(DateTime.now()));
+    var now=DateTime.now();
 
-    _changeRight(get(DateTime.now()));
+    _changeLeft(get(now));
+
+    _changeRight(get(now));
 
     //固定收费项
     var str=_preferences.getString("${room.name}$FEE_KEY");
@@ -83,7 +90,9 @@ class RoomModel extends ChangeNotifier{
     var optionList=_preferences.getString("${room.name}$OPTION_KEY");
     this.optionFeeList=optionList!=null?OptionFeeList.fromJson(jsonDecode(optionList)):OptionFeeList(List());
 
-
+    //加载抄表日期
+    onVisibleDaysChanged(Util.firstDayOfMonth(now), Util.lastDayOfMonth(now), CalendarFormat.month);
+  
     initialized=true;
 
     notifyListeners();
@@ -94,6 +103,7 @@ class RoomModel extends ChangeNotifier{
       optionFeeList.add(OptionFee());
       notifyListeners();
   }
+
 
   void removeOptionFee(int index){
     optionFeeList.remove(index);
@@ -270,7 +280,7 @@ class RoomModel extends ChangeNotifier{
 
     var list=[
       FeeItem.get("电费","$rightElect - $leftElect = $usedElect 度\n$usedElect * $electFee = $eFee 元",eFee),
-      FeeItem.get("水费","$rightWater - $leftWater = $usedWater 升\n$usedWater * $waterFee = $wFee 元",eFee),
+      FeeItem.get("水费","$rightWater - $leftWater = $usedWater 度\n$usedWater * $waterFee = $wFee 元",eFee),
       //租金
       FeeItem.get("租金",null,rent),
     ];
@@ -286,6 +296,8 @@ class RoomModel extends ChangeNotifier{
       electFee: electFee,
       waterFee: waterFee,
       rent: rent,
+      electAmount: usedElect.toDouble(),
+      waterAmount: usedWater.toDouble(),
       total: total,
       items: list,
     );
@@ -313,6 +325,19 @@ class RoomModel extends ChangeNotifier{
         )
     ));
   }
+
+  void capturePng(Uint8List pngBytes) async{
+    var dir = App.dir(dir:"screenshot/");
+    if(! await dir.exists())
+      await dir.create(recursive: true);
+    var file=File("${dir.path}${Uuid().v4()}.png");
+    await file.writeAsBytes(pngBytes);
+    Share.shareFiles(
+      [file.path],
+      text: "截图"
+    );
+  }
+
 
 }
 

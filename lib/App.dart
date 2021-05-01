@@ -21,6 +21,10 @@ class App {
     Printer.printMapJsonLog(_exDirectory==null);
   }
 
+  static Directory dir({String dir}){
+    return Directory("/storage/emulated/0/hermes/${dir??""}");
+  }
+
 
   static SharedPreferences get sharedPreferences => _sharedPreferences;
 

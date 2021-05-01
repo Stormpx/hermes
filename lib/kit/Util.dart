@@ -14,4 +14,13 @@ class Util{
   }
 
 
+  static DateTime firstDayOfMonth(DateTime month) {
+    return DateTime.utc(month.year, month.month, 1, 12);
+  }
+
+  static DateTime lastDayOfMonth(DateTime month) {
+    final date = month.month < 12 ? DateTime.utc(month.year, month.month + 1, 1, 12) : DateTime.utc(month.year + 1, 1, 1, 12);
+    return date.subtract(const Duration(days: 1));
+  }
+
 }
