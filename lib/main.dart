@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
     );*/
 
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Hermes',
       theme: ThemeData(
         // This is the theme of your application.
         //

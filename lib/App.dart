@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class App {
 
+  static String _hermesKeyPrefix="hermes:data:";
+
   static SharedPreferences _sharedPreferences;
 
   static Directory _directory;
@@ -25,6 +27,8 @@ class App {
     return Directory("/storage/emulated/0/hermes/${dir??""}");
   }
 
+
+  static String get hermesKeyPrefix => _hermesKeyPrefix;
 
   static SharedPreferences get sharedPreferences => _sharedPreferences;
 

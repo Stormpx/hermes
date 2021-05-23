@@ -63,7 +63,7 @@ class Model extends ChangeNotifier{
       List<dynamic> list = jsonDecode(jsonArray);
 
       List<Floor> floors = list.map((e) => Floor.fromJson(e)).toList();
-      floors.sort((f, f2) => f.name.compareTo(f2.name));
+//      floors.sort((f, f2) => f.name.compareTo(f2.name));
       _list = floors;
     }
 
@@ -74,6 +74,18 @@ class Model extends ChangeNotifier{
 
   TextEditingController floorNameController = TextEditingController();
   TextEditingController floorSortController = TextEditingController();
+
+
+  void floorReorder(int oldIndex,int newIndex) async{
+    if(oldIndex<newIndex){
+      newIndex--;
+    }
+      var floor = _list.removeAt(oldIndex);
+      _list.insert(newIndex, floor);
+    var b=await App.sharedPreferences.setString(FLOOR_LIST_KEYS,jsonEncode(list));
+    Printer.printMapJsonLog("content???????");
+      notifyListeners();
+  }
 
 
   void onAddFloor(BuildContext context) async {
@@ -90,9 +102,9 @@ class Model extends ChangeNotifier{
       return ;
     }
     list.add(f);
-    list.sort((f1,f2){
-      return f1.name.compareTo(f2.name);
-    });
+//    list.sort((f1,f2){
+//      return f1.name.compareTo(f2.name);
+//    });
 
 
     floorNameController.clear();
@@ -100,6 +112,13 @@ class Model extends ChangeNotifier{
 
     var b=await App.sharedPreferences.setString(FLOOR_LIST_KEYS,jsonEncode(list));
 
+    notifyListeners();
+  }
+
+
+  void onDelFloor(BuildContext buildContext,Floor floor,int index){
+
+    _list.removeAt(index);
     notifyListeners();
   }
 

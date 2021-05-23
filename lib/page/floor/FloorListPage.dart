@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_printer/flutter_printer.dart';
 import 'package:hermes/CardColumnWidget.dart';
 import 'package:hermes/FloatButton.dart';
 import 'package:hermes/FullCoverOpaque.dart';
@@ -38,29 +40,84 @@ class _FloorListPageState extends State<FloorListPage> {
   Widget floorBuilder(){
     var model=Provider.of<Model>(context);
     var list=model.list;
-    return ListView.builder(
-      controller: _scrollController,
-      shrinkWrap: true,
-      itemBuilder: (context,index){
-        var floor = list[index];
-        var key = ObjectKey(floor.name);
-        return ListTile(
-          key: key,
-          isThreeLine: true,
-          subtitle: Text("placeholder"),
-          title: Text(
-            floor.name,
-            softWrap: false,
-            overflow: TextOverflow.fade,
-            style: TextStyle(fontSize: 18.0),
-          ),
-          onTap: () => model.onEnterFloor(context,floor),
-        );
-      },
-      itemCount: list.length,
-      itemExtent: 60,
-      physics: ClampingScrollPhysics(),
+//    print(list);
+    return ReorderableListView.builder(
+      scrollDirection: Axis.vertical,
+        scrollController: _scrollController,
+        itemBuilder: (context,index){
+          var floor = list[index];
+          var key = ObjectKey(floor.name);
+          return ListTile(
+            key: key,
+//            isThreeLine: true,
+            subtitle: Text("placeholder"),
+            title: Text(
+              floor.name,
+              softWrap: false,
+              overflow: TextOverflow.fade,
+              style: TextStyle(fontSize: 18.0),
+            ),
+            onTap: () => model.onEnterFloor(context,floor),
+          );
+        },
+        itemCount: list.length,
+        onReorder: (oldIndex,newIndex){
+          Printer.printMapJsonLog("$oldIndex------$newIndex");
+          model.floorReorder(oldIndex,newIndex);
+        },
+        physics: ClampingScrollPhysics(),
     );
+
+//    final List<int> _items = List<int>.generate(50, (int index) => index);
+//    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+//    final oddItemColor = colorScheme.primary.withOpacity(0.05);
+//    final evenItemColor = colorScheme.primary.withOpacity(0.15);
+//
+//    return ReorderableListView(
+//      padding: const EdgeInsets.symmetric(horizontal: 40),
+//      children: <Widget>[
+//        for (int index = 0; index < _items.length; index++)
+//          ListTile(
+//            key: Key('$index'),
+//            tileColor: _items[index].isOdd ? oddItemColor : evenItemColor,
+//            title: Text('Item ${_items[index]}'),
+//          ),
+//      ],
+//      onReorder: (int oldIndex, int newIndex) {
+//        setState(() {
+//          if (oldIndex < newIndex) {
+//            newIndex -= 1;
+//          }
+//          final int item = _items.removeAt(oldIndex);
+//          _items.insert(newIndex, item);
+//        });
+//      },
+//    );
+
+//    return ListView.builder(
+//
+//      controller: _scrollController,
+//      shrinkWrap: true,
+//      itemBuilder: (context,index){
+//        var floor = list[index];
+//        var key = ObjectKey(floor.name);
+//        return ListTile(
+//          key: key,
+//          isThreeLine: true,
+//          subtitle: Text("placeholder"),
+//          title: Text(
+//            floor.name,
+//            softWrap: false,
+//            overflow: TextOverflow.fade,
+//            style: TextStyle(fontSize: 18.0),
+//          ),
+//          onTap: () => model.onEnterFloor(context,floor),
+//        );
+//      },
+//      itemCount: list.length,
+//      itemExtent: 60,
+//      physics: ClampingScrollPhysics(),
+//    );
   }
 
   @override
@@ -68,7 +125,6 @@ class _FloorListPageState extends State<FloorListPage> {
     var model=Provider.of<Model>(context,listen: false);
     List<Widget> widgets = [
       Scaffold(
-
         resizeToAvoidBottomInset: false,
 //        resizeToAvoidBottomPadding: false,
         appBar: AppBar(
@@ -114,7 +170,7 @@ class _FloorListPageState extends State<FloorListPage> {
           },
           child: floorBuilder()
         ),
-      )
+      ),
     ];
     if (_addFloor) {
 //      _addFloor=false;

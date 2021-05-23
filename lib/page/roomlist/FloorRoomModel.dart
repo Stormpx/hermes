@@ -15,6 +15,8 @@ import 'package:toast/toast.dart';
 class FloorRoomModel extends ChangeNotifier{
   static final String FLOOR_PREFIX="hermes:floor:";
 
+  String _keyPrefix;
+
   Floor floor;
 
   List<Room> rooms=[
@@ -29,7 +31,9 @@ class FloorRoomModel extends ChangeNotifier{
   TextEditingController roomNameController = TextEditingController();
 
   void _init() async{
+    _keyPrefix="${App.hermesKeyPrefix}${floor.name}:";
     var arrayStr =  App.sharedPreferences.getString("$FLOOR_PREFIX+${floor.name}");
+//    var arrayStr = App.sharedPreferences.getString(_keyPrefix);
     if(arrayStr==null||arrayStr.isEmpty)
       return ;
 
@@ -42,6 +46,7 @@ class FloorRoomModel extends ChangeNotifier{
 
   Fee getFee(Room room){
       var str= App.sharedPreferences.getString("${room.name}${RoomModel.FEE_KEY}");
+//      var str= App.sharedPreferences.getString("$_keyPrefix${room.name}${RoomModel.FEE_KEY}");
       print(str);
       if(str==null)
         return null;
@@ -69,6 +74,7 @@ class FloorRoomModel extends ChangeNotifier{
     roomNameController.clear();
 
     App.sharedPreferences.setString("$FLOOR_PREFIX+${floor.name}", jsonEncode(rooms));
+//    App.sharedPreferences.setString("$_keyPrefix${floor.name}", jsonEncode(rooms));
 
     notifyListeners();
   }
@@ -77,7 +83,7 @@ class FloorRoomModel extends ChangeNotifier{
     print("enter room ${room.name}");
     await Navigator.push(context, MaterialPageRoute(
         builder: (c)=>ChangeNotifierProvider(
-          create: (c)=>RoomModel(room),
+          create: (c)=>RoomModel(floor,room),
           child: RoomPage(),
         )
     ));

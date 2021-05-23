@@ -11,10 +11,12 @@ import 'package:flutter/widgets.dart';
 import 'package:hermes/App.dart';
 import 'package:hermes/kit/Util.dart';
 import 'package:hermes/model/FeeResult.dart';
+import 'package:hermes/page/floor/Floor.dart';
 import 'package:hermes/page/roomlist/Room.dart';
 import 'package:hermes/page/snapshot/RoomSanpshotPage.dart';
 import 'package:hermes/page/snapshot/RoomSnapshotModel.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:share/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -48,6 +50,7 @@ class RoomModel extends ChangeNotifier{
   TextEditingController rightElectController= TextEditingController();
   TextEditingController rightWaterController= TextEditingController();
 
+  Floor floor;
   Room room;
 
   Fee fee;
@@ -59,7 +62,7 @@ class RoomModel extends ChangeNotifier{
 
   Map<DateTime,List> events={};
 
-  RoomModel(this.room){
+  RoomModel(this.floor,this.room){
     _init();
   }
 
@@ -279,8 +282,8 @@ class RoomModel extends ChangeNotifier{
     double total = rent+eFee+wFee;
 
     var list=[
-      FeeItem.get("电费","$rightElect - $leftElect = $usedElect 度\n$usedElect * $electFee = $eFee 元",eFee),
-      FeeItem.get("水费","$rightWater - $leftWater = $usedWater 度\n$usedWater * $waterFee = $wFee 元",eFee),
+      FeeItem.get("电费","$rightElect - $leftElect = $usedElect 度\n$usedElect * $electFee = ${eFee.toStringAsFixed(2)} 元",eFee),
+      FeeItem.get("水费","$rightWater - $leftWater = $usedWater 度\n$usedWater * $waterFee = ${wFee.toStringAsFixed(2)} 元",eFee),
       //租金
       FeeItem.get("租金",null,rent),
     ];
@@ -327,6 +330,10 @@ class RoomModel extends ChangeNotifier{
   }
 
   void capturePng(Uint8List pngBytes) async{
+    var status=await Permission.storage.request();
+    if(!status.isGranted){
+      return null;
+    }
     var dir = App.dir(dir:"screenshot/");
     if(! await dir.exists())
       await dir.create(recursive: true);

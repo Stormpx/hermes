@@ -18,7 +18,7 @@ class FeeItemDataTable extends StatelessWidget {
         DataColumn(label: _str('收费项')),
         DataColumn(label: _str('收费(元)'), numeric: false),
       ],
-      rows: items.map((e) => _buildDataRow(e.name, e.desc??e.fee.toString())).toList(),
+      rows: items.map((e) => _buildDataRow(e.name, e.desc??e.fee.toStringAsFixed(2))).toList(),
     );
   }
 

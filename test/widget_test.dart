@@ -34,7 +34,7 @@ void main() {
 
 
   test("dateTest", (){
-    var r=RoomModel(null);
+    var r=RoomModel(null,null);
     r.selectDate(DateTime(2020,6,2));
   });
 

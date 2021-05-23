@@ -135,7 +135,6 @@ class _RoomPageState extends State<RoomPage> {
                       thickness: 2,
                     ),
                     RepaintBoundary(
-                      key: rootWidgetKey,
                       child: caclulateResultTestWidget(),
                     ),
                     _image==null?Container():Image.memory(_image,height: 300,)
@@ -432,6 +431,12 @@ class _RoomPageState extends State<RoomPage> {
           height: 5,
         ),
         Container(
+          child: str("${roomModel.room.name}"),
+        ),
+        Container(
+          height: 5,
+        ),
+        Container(
           child: str("${Util.formatDay(fr.date)}"),
         ),
         Container(
@@ -459,19 +464,35 @@ class _RoomPageState extends State<RoomPage> {
         ),
       ));
       
-      
-      list.add(RaisedButton(
-        onPressed: () => roomModel.saveFeeSnapshot(context, fr),
-
-        child: Text("保存"),
-      ));
+//
+//      list.add(RaisedButton(
+//        onPressed: () => roomModel.saveFeeSnapshot(context, fr),
+//
+//        child: Text("保存"),
+//      ));
       
     }
 
     return Container(
       color: Colors.grey,
       child: Column(
-        children: list,
+        children: [
+          RepaintBoundary(
+            key: rootWidgetKey,
+            child: Container(
+                color: Colors.grey,
+                child:Column(
+                  children: list,
+                )
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => roomModel.saveFeeSnapshot(context, fr),
+
+            child: Text("保存"),
+          ),
+
+        ],
       ),
     );
   }
