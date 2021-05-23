@@ -27,13 +27,13 @@ class _RoomPageState extends State<RoomPage> {
   Uint8List _image=null;
 
   void _captureContent(RoomModel model) async{
+    if(!model.isComputable())
+      return;
     RenderRepaintBoundary boundary =
     rootWidgetKey.currentContext.findRenderObject();
     var image = await boundary.toImage(pixelRatio: 3.0);
     ByteData byteData = await image.toByteData(format: ImageByteFormat.png);
     Uint8List pngBytes = byteData.buffer.asUint8List();
-
-
     model.capturePng(pngBytes);
 
   }
@@ -69,81 +69,78 @@ class _RoomPageState extends State<RoomPage> {
               child: SingleChildScrollView(
                 child: Column(
                   children: <Widget>[
-                    feeWidget(),
-                    Divider(
-                      height: 40.0,
-                      indent: 0,
-                      color: Colors.lightBlueAccent,
-                      thickness: 5,
-                    ),
-                    TableCalendar(
-                      events: roomModel.events,
-                      calendarController: roomModel.calendarController,
-                      onVisibleDaysChanged: roomModel.onVisibleDaysChanged,
-//                initialSelectedDay: roomModel.selectedDays(),
-                      initialCalendarFormat: CalendarFormat.month,
-                      availableGestures: AvailableGestures.horizontalSwipe,
-                      availableCalendarFormats: {
-                        CalendarFormat.month: 'Month',
-                      },
-                      locale: 'zh_CN',
-                      onDaySelected: (d, e,h) {
-                        roomModel.selectDate(d);
-                      },
-                      builders: CalendarBuilders(
-                        todayDayBuilder: (context, date, _) {
-                          return Container(
-                            alignment: Alignment.center,
-//                      margin: const EdgeInsets.all(4.0),
-//                      padding: const EdgeInsets.only(top: 5.0, left: 6.0),
-                            color: Colors.amber[400],
-                            width: 100,
-                            height: 100,
-                            child: Text(
-                              '${date.day}',
-                              style: TextStyle().copyWith(fontSize: 16.0),
-                            ),
-                          );
-                        },
-                        markersBuilder: (context, date, events, holidays) {
-                          final children = <Widget>[];
-                          if (events.isNotEmpty) {
-                            children.add(
-                              Positioned(
-                                right: 1,
-                                bottom: 1,
-                                child: _buildEventsMarker(date, events),
-                              ),
-                            );
-                          }
-
-                          return children;
-                        },
-                      ),
-                    ),
-                    Divider(
-                      height: 40.0,
-                      indent: 0,
-                      color: Colors.lightBlueAccent,
-                      thickness: 5,
-                    ),
-                    dayWidget(),
-                    Divider(
-                      height: 20.0,
-                      indent: 0,
-                      color: Colors.lightBlueAccent,
-                      thickness: 2,
-                    ),
-                    RepaintBoundary(
-                      child: caclulateResultTestWidget(),
-                    ),
-                    _image==null?Container():Image.memory(_image,height: 300,)
+                    _feeWidget(),
+                    _divider(),
+                    _calendar(),
+                    _divider(),
+                    _dayWidget(),
+                    _divider(),
+                    _caclulateResultTestWidget()
                   ],
                 ),
               ),
             );
           },
         ));
+  }
+
+  Widget _divider(){
+    return Divider(
+      height: 20.0,
+      indent: 0,
+      color: Colors.lightBlueAccent,
+      thickness: 2,
+    );
+  }
+
+
+  Widget _calendar(){
+    var roomModel = Provider.of<RoomModel>(context);
+    return TableCalendar(
+      events: roomModel.events,
+      calendarController: roomModel.calendarController,
+      onVisibleDaysChanged: roomModel.onVisibleDaysChanged,
+//                initialSelectedDay: roomModel.selectedDays(),
+      initialCalendarFormat: CalendarFormat.month,
+      availableGestures: AvailableGestures.horizontalSwipe,
+      availableCalendarFormats: {
+        CalendarFormat.month: 'Month',
+      },
+      locale: 'zh_CN',
+      onDaySelected: (d, e,h) {
+        roomModel.selectDate(d);
+      },
+      builders: CalendarBuilders(
+        todayDayBuilder: (context, date, _) {
+          return Container(
+            alignment: Alignment.center,
+//                      margin: const EdgeInsets.all(4.0),
+//                      padding: const EdgeInsets.only(top: 5.0, left: 6.0),
+            color: Colors.amber[400],
+            width: 100,
+            height: 100,
+            child: Text(
+              '${date.day}',
+              style: TextStyle().copyWith(fontSize: 16.0),
+            ),
+          );
+        },
+        markersBuilder: (context, date, events, holidays) {
+          final children = <Widget>[];
+          if (events.isNotEmpty) {
+            children.add(
+              Positioned(
+                right: 1,
+                bottom: 1,
+                child: _buildEventsMarker(date, events),
+              ),
+            );
+          }
+
+          return children;
+        },
+      ),
+    );
   }
 
   Widget _buildEventsMarker(DateTime date, List events) {
@@ -172,7 +169,7 @@ class _RoomPageState extends State<RoomPage> {
     );
   }
 
-  Widget feeWidget() {
+  Widget _feeWidget() {
     var roomModel = Provider.of<RoomModel>(context);
     List<Widget> list = [
       Container(
@@ -279,7 +276,7 @@ class _RoomPageState extends State<RoomPage> {
     );
   }
 
-  Widget dayWidget() {
+  Widget _dayWidget() {
     var roomModel = Provider.of<RoomModel>(context);
     return Container(
       child: Column(
@@ -387,7 +384,7 @@ class _RoomPageState extends State<RoomPage> {
 
   double _fontSize=15;
 
-  Widget caclulateResultTestWidget() {
+  Widget _caclulateResultTestWidget() {
     var roomModel = Provider.of<RoomModel>(context);
     var fr=roomModel.calculateResult();
 
@@ -442,7 +439,7 @@ class _RoomPageState extends State<RoomPage> {
         Container(
           height: 5,
         ),
-        new Slider(
+        Slider(
           value: _fontSize,
           max: 20,
           min: 5,
@@ -453,24 +450,16 @@ class _RoomPageState extends State<RoomPage> {
             roomModel.notifyListeners();
           },
         ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: FeeItemDataTable(
+            rowHeight: 60,
+            items: fr.items,
+            fontSize: _fontSize,
+          ),
+        )
       ];
 
-      list.add(SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: FeeItemDataTable(
-          rowHeight: 60,
-          items: fr.items,
-          fontSize: _fontSize,
-        ),
-      ));
-      
-//
-//      list.add(RaisedButton(
-//        onPressed: () => roomModel.saveFeeSnapshot(context, fr),
-//
-//        child: Text("保存"),
-//      ));
-      
     }
 
     return Container(
@@ -486,12 +475,11 @@ class _RoomPageState extends State<RoomPage> {
                 )
             ),
           ),
-          ElevatedButton(
-            onPressed: () => roomModel.saveFeeSnapshot(context, fr),
-
-            child: Text("保存"),
-          ),
-
+          if(fr!=null)
+            ElevatedButton(
+              onPressed: () => roomModel.saveFeeSnapshot(context, fr),
+              child: Text("保存"),
+            ),
         ],
       ),
     );

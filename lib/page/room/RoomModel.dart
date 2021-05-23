@@ -256,6 +256,10 @@ class RoomModel extends ChangeNotifier{
 
   }
 
+  bool isComputable(){
+    return fee!=null;
+  }
+
   /// 所有收费项加起来计算结果
   FeeSnapshot calculateResult(){
     if(fee==null){
