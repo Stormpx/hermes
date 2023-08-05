@@ -1,43 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_printer/flutter_printer.dart';
 import 'package:hermes/App.dart';
+import 'package:hermes/page/building/BuildingList.dart';
 import 'package:hermes/page/floor/FloorListPage.dart';
-import 'package:hermes/page/floor/Model.dart';
+import 'package:hermes/page/floor/FloorModel.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:toast/toast.dart';
 
 
 
 void main() {
-  Printer.enable=false;
+  Printer.enable=true;
   WidgetsFlutterBinding.ensureInitialized();
   initializeDateFormatting()
       .then((_) =>  App.init())
-      .then((_) => runApp(
-          ChangeNotifierProvider(
-            create: (c)=>Model(),
-            child: MyApp(),
-          )
-      ));
+      .then((_) => runApp(MyApp()));
 }
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
 
 
-
   @override
   Widget build(BuildContext context) {
-    /*var p=Provider(FloorListPage(
-        list: [
-          Floor(
-            id:Uuid().v4(),
-
-          )
-        ],
-        addFloor: null,
-        enterFloor: null)
-    );*/
+    ToastContext().init(context);
 
     return MaterialApp(
       title: 'Hermes',
@@ -53,8 +40,11 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: FloorListPage(),
+      home: BuildingListPage(),
     );
   }
+
+
+
 }
 

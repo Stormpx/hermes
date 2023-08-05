@@ -2,39 +2,39 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:flukit/flukit.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:hermes/FeeItemDataTable.dart';
-import 'package:hermes/GreatGradientButton.dart';
-import 'package:hermes/InitializingWidget.dart';
+import 'package:hermes/component/FeeItemDataTable.dart';
+import 'package:hermes/component/GreatGradientButton.dart';
+import 'package:hermes/HermesState.dart';
+import 'package:hermes/component/InitializingWidget.dart';
 import 'package:hermes/kit/Util.dart';
 import 'package:hermes/page/room/RoomModel.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:toast/toast.dart';
 
-import '../../FloatButton.dart';
 
 class RoomPage extends StatefulWidget {
   @override
   _RoomPageState createState() => _RoomPageState();
 }
 
-class _RoomPageState extends State<RoomPage> {
+class _RoomPageState extends HermesState<RoomPage> {
   GlobalKey rootWidgetKey = GlobalKey();
 
-  Uint8List _image=null;
+  Uint8List? _image=null;
 
   void _captureContent(RoomModel model) async{
     if(!model.isComputable())
       return;
-    RenderRepaintBoundary boundary =
-    rootWidgetKey.currentContext.findRenderObject();
-    var image = await boundary.toImage(pixelRatio: 3.0);
-    ByteData byteData = await image.toByteData(format: ImageByteFormat.png);
-    Uint8List pngBytes = byteData.buffer.asUint8List();
-    model.capturePng(pngBytes);
+    RenderRepaintBoundary? boundary =
+    rootWidgetKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    var image = await boundary?.toImage(pixelRatio: 3.0);
+    ByteData? byteData = await image?.toByteData(format: ImageByteFormat.png);
+    Uint8List? pngBytes = byteData?.buffer.asUint8List();
+    model.capturePng(pngBytes!);
 
   }
 
@@ -46,8 +46,8 @@ class _RoomPageState extends State<RoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    ToastContext().init(context);
     var roomModel = Provider.of<RoomModel>(context);
-
     return Scaffold(
 //        resizeToAvoidBottomPadding: true,
         appBar: AppBar(
@@ -97,21 +97,30 @@ class _RoomPageState extends State<RoomPage> {
   Widget _calendar(){
     var roomModel = Provider.of<RoomModel>(context);
     return TableCalendar(
-      events: roomModel.events,
-      calendarController: roomModel.calendarController,
-      onVisibleDaysChanged: roomModel.onVisibleDaysChanged,
-//                initialSelectedDay: roomModel.selectedDays(),
-      initialCalendarFormat: CalendarFormat.month,
+      focusedDay: roomModel.focusedDay,
+      firstDay: DateTime.utc(2010, 10, 16),
+      lastDay: DateTime.now().add(Duration(days:30*365)),
+      eventLoader: (day)=>roomModel.getEventsForDay(day),
+      // calendarController: roomModel.calendarController,
+      // onVisibleDaysChanged: roomModel.onVisibleDaysChanged,
+      //          initialSelectedDay: roomModel.selectedDays(),
+//       initialCalendarFormat: CalendarFormat.month,
       availableGestures: AvailableGestures.horizontalSwipe,
       availableCalendarFormats: {
         CalendarFormat.month: 'Month',
       },
       locale: 'zh_CN',
-      onDaySelected: (d, e,h) {
-        roomModel.selectDate(d);
+      selectedDayPredicate: (day){
+        return roomModel.isSelected(day);
       },
-      builders: CalendarBuilders(
-        todayDayBuilder: (context, date, _) {
+      onDaySelected: (selectedDay, focusedDay) {
+        roomModel.selectDate(selectedDay);
+      },
+      onPageChanged: (focusedDay){
+        roomModel.focusedDay=focusedDay;
+      },
+      calendarBuilders: CalendarBuilders(
+        todayBuilder: (context, date, _) {
           return Container(
             alignment: Alignment.center,
 //                      margin: const EdgeInsets.all(4.0),
@@ -125,19 +134,16 @@ class _RoomPageState extends State<RoomPage> {
             ),
           );
         },
-        markersBuilder: (context, date, events, holidays) {
-          final children = <Widget>[];
+        markerBuilder: (context, date, events) {
+          // Printer.printMapJsonLog(date);
+          // Printer.printMapJsonLog(events);
           if (events.isNotEmpty) {
-            children.add(
-              Positioned(
-                right: 1,
-                bottom: 1,
-                child: _buildEventsMarker(date, events),
-              ),
+            return Positioned(
+              right: 1,
+              bottom: 1,
+              child: _buildEventsMarker(date, events),
             );
           }
-
-          return children;
         },
       ),
     );
@@ -149,9 +155,9 @@ class _RoomPageState extends State<RoomPage> {
       duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
-        color: roomModel.calendarController.isSelected(date)
+        color: roomModel.isSelected(date)
             ? Colors.brown[500]
-            : roomModel.calendarController.isToday(date)
+            : DateTime.now().difference(date).inDays<1
                 ? Colors.brown[300]
                 : Colors.blue[400],
       ),
@@ -200,27 +206,40 @@ class _RoomPageState extends State<RoomPage> {
             Icons.fiber_manual_record,
             color: Colors.white,
           )),
+
+      for(int i = 0; i < roomModel.optionFeeList.list.length; i++)
+        optionFeeTextField(roomModel.optionFeeList.list[i], () => roomModel.removeOptionFee(i)),
+
+      Container(height: 5,),
+      Container(
+        child: ElevatedButton.icon(
+          icon: Icon(Icons.keyboard_arrow_down),
+          label: Text("添加额外收费项"),
+          onPressed: () => roomModel.addOptionFee(),
+        ),
+      )
     ];
 
-    var optionFeeList = roomModel.optionFeeList;
-    for (int i = 0; i < optionFeeList.list.length; i++) {
-      var optionFee = optionFeeList.list[i];
-      list.add(optionFeeTextField(optionFee.nameTextController,
-          optionFee.feeTextController, () => roomModel.removeOptionFee(i)));
-    }
-
-    list.add(Container(
-      child: RaisedButton(
-        onPressed: () => roomModel.addOptionFee(),
-        child: Text("添加额外收费项"),
-      ),
-    ));
+//    var optionFeeList = roomModel.optionFeeList;
+//    for (int i = 0; i < optionFeeList.list.length; i++) {
+//      var optionFee = optionFeeList.list[i];
+//      list.add(optionFeeTextField(optionFee, () => roomModel.removeOptionFee(i)));
+//    }
+//    list.add(Container(
+//      child: ElevatedButton.icon(
+//          icon: Icon(Icons.keyboard_arrow_down),
+//          label: Text("添加额外收费项"),
+//          onPressed: () => roomModel.addOptionFee(),
+//      ),
+//    ));
     return GreatGradientButton(
       onPressed: () {},
       onLongPress: () => roomModel.saveFee(context),
       colors: [Colors.lightBlueAccent, Colors.blue],
       child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: list),
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: list
+      ),
     );
   }
 
@@ -241,14 +260,24 @@ class _RoomPageState extends State<RoomPage> {
     );
   }
 
-  Widget optionFeeTextField(TextEditingController nameTextController,
-      TextEditingController feeTextController, VoidCallback onCancel) {
+  Widget optionFeeTextField(OptionFee fee, VoidCallback onCancel) {
+
+    TextEditingController _nameTextController = TextEditingController();
+    TextEditingController _feeTextController = TextEditingController();
+    _nameTextController.text=fee.name.toString();
+    _feeTextController.text=fee.fee.toString();
+    _nameTextController.addListener(() {
+      fee.name=_nameTextController.text;
+    });
+    _feeTextController.addListener(() {
+      fee.fee=double.tryParse(_feeTextController.text)??0;
+    });
     return Flex(
       direction: Axis.horizontal,
       children: <Widget>[
         Expanded(
             child: TextField(
-          controller: nameTextController,
+          controller: _nameTextController,
           keyboardType: TextInputType.text,
           autofocus: false,
           maxLines: 1,
@@ -259,7 +288,7 @@ class _RoomPageState extends State<RoomPage> {
         Expanded(
             flex: 3,
             child: TextField(
-              controller: feeTextController,
+              controller: _feeTextController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               autofocus: false,
               maxLines: 1,
@@ -370,7 +399,7 @@ class _RoomPageState extends State<RoomPage> {
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          RaisedButton(
+          ElevatedButton(
             onPressed: () => roomModel.saveDate(context, left),
             child: Text("保存"),
           ),
@@ -454,7 +483,7 @@ class _RoomPageState extends State<RoomPage> {
           scrollDirection: Axis.horizontal,
           child: FeeItemDataTable(
             rowHeight: 60,
-            items: fr.items,
+            items: fr.items??[],
             fontSize: _fontSize,
           ),
         )

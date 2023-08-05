@@ -3,13 +3,13 @@ import 'package:flutter/widgets.dart';
 ///
 class FullCoverOpaque extends StatelessWidget {
   FullCoverOpaque({
-    Key key,
+    Key? key,
     this.child,
     this.color= Colors.grey,
     this.opacity=0.8
   }):super(key:key);
 
-  Widget child;
+  Widget? child;
   Color color;
   double opacity;
 

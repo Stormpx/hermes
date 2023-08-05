@@ -1,10 +1,12 @@
 
 import 'package:flutter/material.dart';
-import 'package:hermes/FloatButton.dart';
-import 'package:hermes/FullCoverOpaque.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:hermes/component/CardColumnWidget.dart';
+import 'package:hermes/component/FloatButton.dart';
+import 'package:hermes/component/FullCoverOpaque.dart';
+import 'package:hermes/HermesState.dart';
 import 'package:provider/provider.dart';
 
-import '../../CardColumnWidget.dart';
 import 'FloorRoomModel.dart';
 
 class FloorRoomsPage extends StatefulWidget {
@@ -16,7 +18,7 @@ class FloorRoomsPage extends StatefulWidget {
 
 
 
-class _FloorRoomsPageState extends State<FloorRoomsPage> {
+class _FloorRoomsPageState extends HermesState<FloorRoomsPage> {
 
   final ScrollController _scrollController = ScrollController();
 
@@ -32,22 +34,74 @@ class _FloorRoomsPageState extends State<FloorRoomsPage> {
         var room = roomModel.rooms[index];
         var fee=roomModel.getFee(room);
         var key = ObjectKey(room.name);
-        return ListTile(
-          key: key,
-          isThreeLine: true,
-          subtitle: Text(fee==null?"placeholder":"${fee.rent??0}  ${fee.electFee??0}元/度   ${fee.waterFee??0}元/升"),
-          title: Text(
-            room.name,
-            softWrap: false,
-            overflow: TextOverflow.fade,
-            style: TextStyle(fontSize: 18.0),
+        return Slidable(
+          endActionPane: ActionPane(
+            motion: ScrollMotion(),
+            children: [
+              SlidableAction(
+                  label: '删除',
+                  backgroundColor: Colors.red,
+                  icon: Icons.delete,
+                  onPressed: (BuildContext context) async {
+                    var delete = await _showDeleteConfirmDialog(room.name);
+                    if (delete!=null && delete) {
+                      print("delete");
+                      roomModel.deleteRoom(context, room);
+                    }
+                  }
+              )
+            ],
           ),
-          onTap: () => roomModel.enterRoom(context,room),
+          child: ListTile(
+            key: key,
+            isThreeLine: true,
+            subtitle: Text(fee==null?"placeholder":"${fee.rent??0}  ${fee.electFee??0}元/度   ${fee.waterFee??0}元/升"),
+            title: Text(
+              room.name,
+              softWrap: false,
+              overflow: TextOverflow.fade,
+              style: TextStyle(fontSize: 18.0),
+            ),
+            onTap: () => roomModel.enterRoom(context,room),
+          ),
         );
+
       },
       itemCount: roomModel.rooms.length,
       itemExtent: 60,
       physics: ClampingScrollPhysics(),
+    );
+  }
+
+  Future<bool?> _showDeleteConfirmDialog(String name){
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("提示"),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("您确定要删除 $name 吗?"),
+              Text("删除可能会造成数据丢失"),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text("取消"),
+              onPressed: () => Navigator.of(context).pop(false), // 关闭对话框
+            ),
+            TextButton(
+              child: Text("删除"),
+              onPressed: () {
+                //关闭对话框并返回true
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -111,7 +165,7 @@ class _FloorRoomsPageState extends State<FloorRoomsPage> {
                     Expanded(
                         child: Container(
                           alignment: Alignment.centerRight,
-                          child: FlatButton(
+                          child: TextButton(
                               onPressed: (){
                                 _addRoom=false;
                                 roomModel.addRoom(context);

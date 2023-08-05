@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_printer/flutter_printer.dart';
+import 'package:hermes/model/Database.dart';
 import 'package:package_info/package_info.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,37 +12,40 @@ class App {
 
   static String _hermesKeyPrefix="hermes:data:";
 
-  static SharedPreferences _sharedPreferences;
+  static SharedPreferences? _sharedPreferences;
 
-  static Directory _directory;
+  static Directory? _directory;
 
-  static Directory _exDirectory;
+  static Directory? _exDirectory;
 
-
+  static HermesDatabase _database=HermesDatabase();
 
   static Future init() async {
     _sharedPreferences = await SharedPreferences.getInstance();
     _directory = await getApplicationDocumentsDirectory();
-    _exDirectory = await getExternalStorageDirectory();
+    _exDirectory = (await getExternalStorageDirectory())!;
+
     Printer.printMapJsonLog(_exDirectory==null);
     var versionKey="hermes:version";
-    var version=_sharedPreferences.getString(versionKey);
+    var version=_sharedPreferences!.getString(versionKey);
     if(version!=null){
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
-      _sharedPreferences.setString(versionKey, packageInfo.version);
+      _sharedPreferences!.setString(versionKey, packageInfo.version);
     }
   }
 
-  static Directory dir({String dir}){
+  static Directory dir({String? dir}){
     return Directory("/storage/emulated/0/hermes/${dir??""}");
   }
 
 
   static String get hermesKeyPrefix => _hermesKeyPrefix;
 
-  static SharedPreferences get sharedPreferences => _sharedPreferences;
+  static SharedPreferences? get sharedPreferences => _sharedPreferences;
 
-  static Directory get directory => _directory;
+  static Directory? get directory => _directory;
 
-  static Directory get exDirectory => _exDirectory;
+  static Directory? get exDirectory => _exDirectory;
+
+  static HermesDatabase get database => _database;
 }

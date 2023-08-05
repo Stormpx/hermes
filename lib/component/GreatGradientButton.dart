@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 class GreatGradientButton extends GradientButton{
 
   GreatGradientButton({
-    Key key,
+    Key? key,
     colors,
     onPressed,
-    this.onLongPress,
+    required this.onLongPress,
     padding,
     borderRadius,
     textColor,
@@ -68,7 +68,7 @@ class GreatGradientButton extends GradientButton{
                 style: TextStyle(fontWeight: FontWeight.bold),
                 child: Center(
                   child: DefaultTextStyle(
-                    style: theme.textTheme.button.copyWith(
+                    style: theme.textTheme.labelLarge!.copyWith(
                         color: disabled
                             ? disabledTextColor ?? Colors.black38
                             : textColor ?? Colors.white),

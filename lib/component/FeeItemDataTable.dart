@@ -8,17 +8,18 @@ class FeeItemDataTable extends StatelessWidget {
   double fontSize;
 
 
-  FeeItemDataTable({@required this.items,this.fontSize=10,this.rowHeight=48.0});
+  FeeItemDataTable({required this.items,this.fontSize=10,this.rowHeight=48.0});
 
   @override
   Widget build(BuildContext context) {
     return DataTable(
-      dataRowHeight: this.rowHeight,
+      dataRowMinHeight: this.rowHeight,
+      dataRowMaxHeight: this.rowHeight,
       columns: [
         DataColumn(label: _str('收费项')),
         DataColumn(label: _str('收费(元)'), numeric: false),
       ],
-      rows: items.map((e) => _buildDataRow(e.name, e.desc??e.fee.toStringAsFixed(2))).toList(),
+      rows: items.map((e) => _buildDataRow(e.name!, e.desc??e.fee.toStringAsFixed(2))).toList(),
     );
   }
 

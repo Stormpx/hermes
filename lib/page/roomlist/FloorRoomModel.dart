@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hermes/App.dart';
+import 'package:hermes/model/FeeResult.dart';
 import 'package:hermes/page/floor/Floor.dart';
 import 'package:hermes/page/room/RoomModel.dart';
 import 'package:hermes/page/room/RoomPage.dart';
@@ -15,7 +16,7 @@ import 'package:toast/toast.dart';
 class FloorRoomModel extends ChangeNotifier{
   static final String FLOOR_PREFIX="hermes:floor:";
 
-  String _keyPrefix;
+  String? _keyPrefix;
 
   Floor floor;
 
@@ -32,7 +33,7 @@ class FloorRoomModel extends ChangeNotifier{
 
   void _init() async{
     _keyPrefix="${App.hermesKeyPrefix}${floor.name}:";
-    var arrayStr =  App.sharedPreferences.getString("$FLOOR_PREFIX+${floor.name}");
+    var arrayStr =  App.sharedPreferences!.getString("$FLOOR_PREFIX+${floor.name}");
 //    var arrayStr = App.sharedPreferences.getString(_keyPrefix);
     if(arrayStr==null||arrayStr.isEmpty)
       return ;
@@ -44,8 +45,8 @@ class FloorRoomModel extends ChangeNotifier{
     notifyListeners();
   }
 
-  Fee getFee(Room room){
-      var str= App.sharedPreferences.getString("${room.name}${RoomModel.FEE_KEY}");
+  Fee? getFee(Room room){
+      var str= App.sharedPreferences!.getString("${room.name}${RoomModel.FEE_KEY}");
 //      var str= App.sharedPreferences.getString("$_keyPrefix${room.name}${RoomModel.FEE_KEY}");
       print(str);
       if(str==null)
@@ -61,7 +62,8 @@ class FloorRoomModel extends ChangeNotifier{
     );
 
     if(rooms.any((element) => element==f)){
-      Toast.show("不能添加已存在的item", context,gravity: Toast.BOTTOM);
+      Toast.show("不能添加已存在的房间", gravity: Toast.bottom);
+      notifyListeners();
       return ;
     }
 
@@ -73,8 +75,8 @@ class FloorRoomModel extends ChangeNotifier{
 
     roomNameController.clear();
 
-    App.sharedPreferences.setString("$FLOOR_PREFIX+${floor.name}", jsonEncode(rooms));
-//    App.sharedPreferences.setString("$_keyPrefix${floor.name}", jsonEncode(rooms));
+    _persistenceRooms();
+
 
     notifyListeners();
   }
@@ -88,5 +90,35 @@ class FloorRoomModel extends ChangeNotifier{
         )
     ));
     notifyListeners();
+  }
+
+  deleteRoom(BuildContext context,Room room) async{
+
+    var name=room.name;
+    rooms.remove(room);
+    for (var key in App.sharedPreferences!.getKeys()) {
+
+      if(key.startsWith("$name${RoomModel.OPTION_KEY}")
+        ||key.startsWith("$name${RoomModel.FEE_KEY}")
+        ||key.startsWith("$name${RoomModel.DATE_KEY}")
+        ||key.startsWith("$name${RoomModel.LAST_SELECT_KEY}")
+        ||key.startsWith("$name${FeeSnapshot.room_fee_snapshot_key}")
+      ){
+        var b=await App.sharedPreferences!.remove(key);
+
+      }
+    }
+
+    _persistenceRooms();
+
+    Toast.show("删除成功", gravity: Toast.bottom);
+
+    notifyListeners();
+  }
+
+
+  _persistenceRooms(){
+    App.sharedPreferences!.setString("$FLOOR_PREFIX+${floor.name}", jsonEncode(rooms));
+    //    App.sharedPreferences!.setString("$_keyPrefix${floor.name}", jsonEncode(rooms));
   }
 }

@@ -31,12 +31,12 @@ class RoomModel extends ChangeNotifier{
   static final String OPTION_KEY=":option:fee";
   static final String LAST_SELECT_KEY="_LAST_SELECT";
 
-
-  SharedPreferences _preferences;
-
   bool initialized=false;
 
-  CalendarController calendarController = CalendarController();
+
+  DateTime focusedDay= DateTime.now();
+
+  // CalendarController calendarController = CalendarController();
 
 
   TextEditingController rentController= TextEditingController();
@@ -53,12 +53,12 @@ class RoomModel extends ChangeNotifier{
   Floor floor;
   Room room;
 
-  Fee fee;
-  OptionFeeList optionFeeList;
+  Fee? fee;
+  OptionFeeList optionFeeList=OptionFeeList([]);
 
   bool selectLeft=false;
-  RoomDay left;
-  RoomDay right;
+  RoomDay left=RoomDay(date: DateTime.now(), elect: 0, water: 0);
+  RoomDay right=RoomDay(date: DateTime.now(), elect: 0, water: 0);
 
   Map<DateTime,List> events={};
 
@@ -68,7 +68,8 @@ class RoomModel extends ChangeNotifier{
 
   /// 初始化
   void _init() async{
-    _preferences=App.sharedPreferences;
+    if(initialized)
+      return;
 
     var now=DateTime.now();
 
@@ -77,24 +78,26 @@ class RoomModel extends ChangeNotifier{
     _changeRight(get(now));
 
     //固定收费项
-    var str=_preferences.getString("${room.name}$FEE_KEY");
+    var str=App.sharedPreferences!.getString("${room.name}$FEE_KEY");
     if(str!=null) {
       this.fee = Fee.fromJson(jsonDecode(str));
-      electFeeController.text=this.fee.electFee?.toString();
-      waterFeeController.text=this.fee.waterFee?.toString();
-      rentController.text=this.fee.rent?.toString();
+      electFeeController.text=this.fee!.electFee.toString();
+      waterFeeController.text=this.fee!.waterFee.toString();
+      rentController.text=this.fee!.rent.toString();
     }
     //最后保存日期
-    var date=_preferences.getString("${room.name}$LAST_SELECT_KEY");
+    var date=App.sharedPreferences!.getString("${room.name}$LAST_SELECT_KEY");
     if(date!=null) {
       _changeLeft(get(DateFormat('yyyy-MM-dd').parse(date)));
     }
     //自定义收费项
-    var optionList=_preferences.getString("${room.name}$OPTION_KEY");
-    this.optionFeeList=optionList!=null?OptionFeeList.fromJson(jsonDecode(optionList)):OptionFeeList(List());
+    var optionList=App.sharedPreferences!.getString("${room.name}$OPTION_KEY");
+
+    optionFeeList=optionList!=null?OptionFeeList.fromJson(jsonDecode(optionList)):OptionFeeList([]);
+
 
     //加载抄表日期
-    onVisibleDaysChanged(Util.firstDayOfMonth(now), Util.lastDayOfMonth(now), CalendarFormat.month);
+    onVisibleDaysChanged(Util.firstDayOfMonth(now), Util.lastDayOfMonth(now));
   
     initialized=true;
 
@@ -113,8 +116,11 @@ class RoomModel extends ChangeNotifier{
     notifyListeners();
   }
 
+  List getEventsForDay(DateTime day) {
+    return events[day] ?? [];
+  }
 
-  void onVisibleDaysChanged(DateTime first, DateTime last, CalendarFormat format){
+  void onVisibleDaysChanged(DateTime first, DateTime last){
       var du=Duration(days: 1);
       while(first.isBefore(last)){
         var d=get(first);
@@ -132,20 +138,20 @@ class RoomModel extends ChangeNotifier{
   ///改变左边日期
   void _changeLeft(RoomDay rd){
     left=rd;
-    leftElectController.text=left.elect.toString();
-    leftWaterController.text=left.water.toString();
+    leftElectController.text=left!.elect.toString();
+    leftWaterController.text=left!.water.toString();
   }
 
   ///改变右边日期
   void _changeRight(RoomDay rd){
     right=rd;
-    rightElectController.text=right.elect.toString();
-    rightWaterController.text=right.water.toString();
+    rightElectController.text=right!.elect.toString();
+    rightWaterController.text=right!.water.toString();
   }
 
   ///获取日期数据
   RoomDay get(DateTime date) {
-    var str=_preferences.getString("${room.name}$DATE_KEY${DateFormat('yyyy-MM-dd').format(date)}");
+    var str=App.sharedPreferences!.getString("${room.name}$DATE_KEY${DateFormat('yyyy-MM-dd').format(date)}");
     if(str==null)
       return RoomDay(
         date: date,
@@ -155,6 +161,10 @@ class RoomModel extends ChangeNotifier{
     return RoomDay.fromJson(jsonDecode(str));
   }
 
+  bool isSelected(DateTime dateTime){
+    var date = selectLeft?left:right;
+    return Util.isSameDay(date.date, dateTime);
+  }
 
   void selectDate(DateTime dateTime){
     if(selectLeft){
@@ -168,7 +178,7 @@ class RoomModel extends ChangeNotifier{
         _changeLeft(right);
       }
     }
-
+    focusedDay=dateTime;
 
     notifyListeners();
   }
@@ -183,8 +193,8 @@ class RoomModel extends ChangeNotifier{
     }
     FocusScope.of(context).unfocus();
 
-    await _preferences.setString("${room.name}$DATE_KEY${rd.dateStr()}", jsonEncode(rd));
-    await _preferences.setString("${room.name}$LAST_SELECT_KEY", rd.dateStr());
+    await App.sharedPreferences!.setString("${room.name}$DATE_KEY${rd.dateStr()}", jsonEncode(rd));
+    await App.sharedPreferences!.setString("${room.name}$LAST_SELECT_KEY", rd.dateStr());
 
     //日历做个标记
     if(rd.elect!=0||rd.water!=0){
@@ -193,7 +203,7 @@ class RoomModel extends ChangeNotifier{
           ifAbsent: () => [rd.elect]);
     }
 
-    Toast.show("保存成功", context,gravity: Toast.BOTTOM);
+    Toast.show("保存成功", gravity: Toast.bottom);
 
   }
 
@@ -207,9 +217,9 @@ class RoomModel extends ChangeNotifier{
 
   /// 保存费用
   void saveFee(BuildContext context) async{
-    double rent=double.tryParse(rentController.text);
-    double ef=double.tryParse(electFeeController.text);
-    double wf=double.tryParse(waterFeeController.text);
+    double? rent=double.tryParse(rentController.text);
+    double? ef=double.tryParse(electFeeController.text);
+    double? wf=double.tryParse(waterFeeController.text);
     if(rent==null||ef==null||wf==null){
       return ;
     }
@@ -224,13 +234,13 @@ class RoomModel extends ChangeNotifier{
 
     FocusScope.of(context).unfocus();
     //保存固定收费项
-    await _preferences.setString("${room.name}$FEE_KEY", jsonEncode(f));
+    await App.sharedPreferences!.setString("${room.name}$FEE_KEY", jsonEncode(f));
 
     //保存自定义收费项
     var option=optionFeeList.toJson();
-    await _preferences.setString("${room.name}$OPTION_KEY", jsonEncode(option));
+    await App.sharedPreferences!.setString("${room.name}$OPTION_KEY", jsonEncode(option));
 
-    Toast.show("保存成功", context,gravity: Toast.BOTTOM);
+    Toast.show("保存成功", gravity: Toast.bottom);
 
     notifyListeners();
   }
@@ -261,13 +271,13 @@ class RoomModel extends ChangeNotifier{
   }
 
   /// 所有收费项加起来计算结果
-  FeeSnapshot calculateResult(){
+  FeeSnapshot? calculateResult(){
     if(fee==null){
       return null;
     }
-    double rent = fee.rent ?? 0;
-    double electFee = fee.electFee ?? 0;
-    double waterFee = fee.waterFee ?? 0;
+    double rent = fee!.rent ?? 0;
+    double electFee = fee!.electFee ?? 0;
+    double waterFee = fee!.waterFee ?? 0;
 
     int rightElect = right.elect;
     int leftElect = left.elect;
@@ -317,10 +327,10 @@ class RoomModel extends ChangeNotifier{
 
   Future<void> saveFeeSnapshot(BuildContext context,FeeSnapshot feeSnapshot) async {
 
-    await _preferences.setString("${room.name}${FeeSnapshot.room_fee_snapshot_key}${Util.formatDay(feeSnapshot.date)}",
+    await App.sharedPreferences!.setString("${room.name}${FeeSnapshot.room_fee_snapshot_key}${Util.formatDay(feeSnapshot.date)}",
         jsonEncode(feeSnapshot.toJson()));
 
-    Toast.show("保存成功", context,gravity: Toast.BOTTOM);
+    Toast.show("保存成功", gravity: Toast.bottom);
 
   }
 
@@ -358,7 +368,7 @@ class RoomDay{
   int water;
 
 
-  RoomDay({this.date, this.elect, this.water});
+  RoomDay({required this.date, required this.elect, required this.water});
 
   factory RoomDay.fromJson(Map<String, dynamic> json) {
 
@@ -404,7 +414,7 @@ class Fee{
   double waterFee;
 
 
-  Fee({this.rent,this.electFee, this.waterFee});
+  Fee({required this.rent,required this.electFee, required this.waterFee});
 
   factory Fee.fromJson(Map<String, dynamic> json) {
 
@@ -430,7 +440,7 @@ class OptionFeeList{
 
   List<OptionFee> get list => _list;
 
-  List<OptionFee> get availableList => _list.where((element) => element.name!=null&&element.name.isNotEmpty).toList();
+  List<OptionFee> get availableList => _list.where((element) => element.name!=null).toList();
 
   OptionFeeList(this._list);
 
@@ -464,7 +474,7 @@ class OptionFee{
   TextEditingController _nameTextController = TextEditingController();
   TextEditingController _feeTextController = TextEditingController();
 
-  String name;
+  String? name;
   double fee;
 
 
@@ -473,21 +483,23 @@ class OptionFee{
   TextEditingController get feeTextController => _feeTextController;
 
 
-  OptionFee({this.name,this.fee}){
+  OptionFee({ this.name,this.fee=0.0}){
     _feeTextController.addListener(() {
         fee=double.tryParse(_feeTextController.text)??0;
     });
     _nameTextController.addListener(() {
         name=_nameTextController.text;
     });
-    _nameTextController.text=name?.toString();
-    _feeTextController.text=fee?.toString();
+    if(name!=null) {
+      _nameTextController.text = name.toString();
+    }
+    _feeTextController.text = fee.toString();
   }
 
   factory OptionFee.fromJson(Map<String, dynamic> json) {
     return OptionFee(
       name: json['name'] as String,
-      fee: json['fee'] as double,
+      fee: (json['fee'] as double)??0.0,
     );
   }
 
@@ -495,7 +507,7 @@ class OptionFee{
   Map<String, dynamic> toJson() =>
       {
         'name': name,
-        'fee': fee,
+        'fee': fee??0.0,
       };
 
 }

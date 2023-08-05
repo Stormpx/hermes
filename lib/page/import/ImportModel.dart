@@ -33,16 +33,16 @@ class ImportModel extends ChangeNotifier{
     _total=json.length;
     _index=0;
     for(var e in json.entries){
-     await App.sharedPreferences.setString(e.key, e.value);
+     await App.sharedPreferences!.setString(e.key, e.value);
       _index++;
       notifyListeners();
     }
 
-    Toast.show("数据导入完毕", context,duration: 2,gravity: Toast.BOTTOM);
+    Toast.show("数据导入完毕", duration: 2,gravity: Toast.bottom);
     Navigator.pop(context);
   }
 
-  Future<String> getEncryptData(String text) async{
+  Future<String?> getEncryptData(String text) async{
     if(_way==1){
       try {
         var status=await Permission.storage.request();

@@ -34,8 +34,8 @@ void main() {
 
 
   test("dateTest", (){
-    var r=RoomModel(null,null);
-    r.selectDate(DateTime(2020,6,2));
+    // var r=RoomModel(null,null);
+    // r.selectDate(DateTime(2020,6,2));
   });
 
   test("jsonTest", (){

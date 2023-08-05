@@ -4,9 +4,9 @@ class FloatButton extends StatelessWidget {
 
   VoidCallback onPressed;
 
-  Icon icon;
+  Icon? icon;
 
-  FloatButton({this.onPressed,this.icon})
+  FloatButton({required this.onPressed, this.icon})
   ;
 
   @override

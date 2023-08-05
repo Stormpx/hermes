@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:hermes/FeeItemDataTable.dart';
+import 'package:hermes/HermesState.dart';
 import 'package:hermes/kit/Util.dart';
 import 'package:hermes/model/FeeResult.dart';
 import 'package:hermes/page/snapshot/RoomSnapshotModel.dart';
 import 'package:provider/provider.dart';
+
+import 'package:hermes/component/FeeItemDataTable.dart';
 
 class RoomSnapshotPage extends StatefulWidget {
   @override
   _RoomSnapshotPageState createState() => _RoomSnapshotPageState();
 }
 
-class _RoomSnapshotPageState extends State<RoomSnapshotPage> {
+class _RoomSnapshotPageState extends HermesState<RoomSnapshotPage> {
 
   int _currentIndex=-1;
   @override
@@ -31,7 +33,7 @@ class _RoomSnapshotPageState extends State<RoomSnapshotPage> {
               _currentIndex=-1;
             model.notifyListeners();
           },
-          children: _buildExpansionPanel(model.getSanpshot()),
+          children: _buildExpansionPanel(model.getSnapshot()),
 
         ),
       ),
@@ -60,7 +62,7 @@ class _RoomSnapshotPageState extends State<RoomSnapshotPage> {
                 alignment: Alignment.center,
                 child: FeeItemDataTable(
                   rowHeight: 63,
-                  items: e.items,
+                  items: e.items??[],
                   fontSize: 14,
                 )
 //                child: _buildTable(e.items)

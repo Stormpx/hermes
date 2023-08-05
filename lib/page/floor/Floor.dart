@@ -6,7 +6,7 @@ class Floor{
   int sort=0;
 
 
-  Floor({ this.name,this.sort});
+  Floor({ required this.name,this.sort=0});
 
   factory Floor.fromJson(Map<String, dynamic> json) {
     return Floor(

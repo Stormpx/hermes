@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 class CardColumnWidget extends StatelessWidget {
 
 
-  Color color;
+  Color? color;
   Widget child;
 
-  CardColumnWidget( {@required this.child,this.color});
+  CardColumnWidget( {required this.child, this.color});
 
   @override
   Widget build(BuildContext context) {

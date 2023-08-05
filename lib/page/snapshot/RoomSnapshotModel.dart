@@ -21,9 +21,9 @@ class RoomSnapshotModel extends ChangeNotifier{
     notifyListeners();
   }
   
-  List<FeeSnapshot> getSanpshot(){
+  List<FeeSnapshot> getSnapshot(){
     String prefix="${room.name}${FeeSnapshot.room_fee_snapshot_key}";
-    var list=App.sharedPreferences.getKeys()
+    var list=App.sharedPreferences!.getKeys()
         .where((str) => str.startsWith(prefix))
         .toList()
     ;
@@ -35,8 +35,8 @@ class RoomSnapshotModel extends ChangeNotifier{
       return dt2.compareTo(dt1);
     });
     return list
-        .map((e) => App.sharedPreferences.getString(e))
-        .map((e) => FeeSnapshot.fromJson(jsonDecode(e)))
+        .map((e) => App.sharedPreferences!.getString(e))
+        .map((e) => FeeSnapshot.fromJson(jsonDecode(e!)))
         .toList();
 
   }

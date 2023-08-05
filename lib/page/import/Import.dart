@@ -4,8 +4,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_printer/flutter_printer.dart';
-import 'package:hermes/FloatButton.dart';
-import 'package:hermes/InitializingWidget.dart';
+import 'package:hermes/HermesState.dart';
+import 'package:hermes/component/FloatButton.dart';
+import 'package:hermes/component/InitializingWidget.dart';
 import 'package:hermes/page/import/ImportModel.dart';
 import 'package:provider/provider.dart';
 
@@ -14,21 +15,21 @@ class Import extends StatefulWidget {
   _ImportState createState() => _ImportState();
 }
 
-class _ImportState extends State<Import> {
+class _ImportState extends HermesState<Import> {
   final FocusNode blankNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController configController = TextEditingController();
 
 
   void _chooseFile() async{
-    FilePickerResult result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.any,
     );
 
     if(result != null) {
       Printer.printMapJsonLog(result.files.single.path);
 
-      configController.text=result.files.single.path;
+      configController.text=result.files.single.path!;
 
     } else {
       // User canceled the picker
@@ -68,12 +69,12 @@ class _ImportState extends State<Import> {
                       children: <Widget>[
                         Flexible(
                           child: RadioListTile<int>(title: Text("黏贴数据"),value: 0, groupValue: model.way, onChanged: (value){
-                            model.setWay(value);
+                            model.setWay(value!);
                           }),
                         ),
                         Flexible(
                           child: RadioListTile<int>(title: Text("文件路径"),value: 1, groupValue: model.way, onChanged: (value){
-                            model.setWay(value);
+                            model.setWay(value!);
                           }),
                         )
                       ],

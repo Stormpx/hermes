@@ -4,11 +4,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_printer/flutter_printer.dart';
-import 'package:hermes/CardColumnWidget.dart';
-import 'package:hermes/FloatButton.dart';
-import 'package:hermes/FullCoverOpaque.dart';
+import 'package:hermes/component/CardColumnWidget.dart';
+import 'package:hermes/component/FloatButton.dart';
+import 'package:hermes/component/FullCoverOpaque.dart';
+import 'package:hermes/HermesState.dart';
 import 'package:provider/provider.dart';
-import 'Model.dart';
+import 'FloorModel.dart';
 
 
 class FloorListPage extends StatefulWidget {
@@ -22,12 +23,14 @@ class FloorListPage extends StatefulWidget {
 
 
 
-class _FloorListPageState extends State<FloorListPage> {
+class _FloorListPageState extends HermesState<FloorListPage> {
   final FocusNode blankNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
 
+  TextEditingController floorNameController = TextEditingController();
+  TextEditingController floorSortController = TextEditingController();
 
-  bool _addFloor = false;
+  bool _input= false;
 
 
   @override
@@ -37,20 +40,23 @@ class _FloorListPageState extends State<FloorListPage> {
   }
 
   ///楼层列表
-  Widget floorBuilder(){
-    var model=Provider.of<Model>(context);
+  Widget _floorBuilder(FloorModel model){
     var list=model.list;
 //    print(list);
     return ReorderableListView.builder(
       scrollDirection: Axis.vertical,
         scrollController: _scrollController,
+        buildDefaultDragHandles: false,
         itemBuilder: (context,index){
           var floor = list[index];
           var key = ObjectKey(floor.name);
           return ListTile(
             key: key,
-//            isThreeLine: true,
             subtitle: Text("placeholder"),
+            trailing: ReorderableDragStartListener(
+              index: index,
+              child: Icon(Icons.list),
+            ),
             title: Text(
               floor.name,
               softWrap: false,
@@ -122,71 +128,40 @@ class _FloorListPageState extends State<FloorListPage> {
 
   @override
   Widget build(BuildContext context) {
-    var model=Provider.of<Model>(context,listen: false);
-    List<Widget> widgets = [
-      Scaffold(
-        resizeToAvoidBottomInset: false,
+    return ChangeNotifierProvider(
+      create: (c)=>FloorModel(),
+      child: Consumer<FloorModel>(
+        builder: (ctx,model,child){
+          return Scaffold(
+            resizeToAvoidBottomInset: false,
 //        resizeToAvoidBottomPadding: false,
-        appBar: AppBar(
-          title: Text("楼层列表"),
-          actions: <Widget>[
-            PopupMenuButton(
-              itemBuilder: (context){
-                return [
-                  PopupMenuItem(child: Text("导出到剪切板"),value: "export2clipboard",),
-                  PopupMenuItem(child: Text("导出到文件"),value: "export2file",),
-                  PopupMenuItem(child: Text("导入"),value: "import"),
-                  PopupMenuItem(child: Text("清除数据"),value: "clear"),
-                ];
-              },
-              onCanceled: (){
-                print("canceled");
-              },
-              onSelected: (value){
-                switch(value){
-                  case "export2clipboard":
-                    model.export2clipboard(context);
-                    break;
-                  case "export2file":
-                    model.export2File(context);
-                    break;
-                  case "import":
-                    model.route2Import(context);
-                    break;
-                  case "clear":
-                    model.clearData(context);
-                    break;
-                }
-              },
-            )
-          ],
-        ),
-        floatingActionButton: FloatButton(
-          onPressed: () => setState(() => _addFloor = true),
-        ),
-        body: GestureDetector(
-          onTap: () {
-            FocusScope.of(context).requestFocus(blankNode); //关键盘
-          },
-          child: floorBuilder()
-        ),
+            appBar: AppBar(
+              title: Text("楼层列表"),
+            ),
+            floatingActionButton: FloatButton(
+              onPressed: () => setState((){ _input = true;}),
+            ),
+            body: GestureDetector(
+                onTap: () {
+                  FocusScope.of(context).requestFocus(blankNode); //关键盘
+                },
+                child: _floorBuilder(model)
+            ),
+          );
+        },
       ),
-    ];
-    if (_addFloor) {
-//      _addFloor=false;
-      widgets.add(FullCoverOpaque(child: Container()));
-      widgets.add(inputFloorWidget());
-    }
-
-    return Stack(
-      children: widgets,
     );
+
   }
 
-  Widget inputFloorWidget() {
-    print( MediaQuery.of(context).viewInsets.bottom);
-    var model=Provider.of<Model>(context,listen: false);
+  Widget _inputFloorWidget() {
+//    print( MediaQuery.of(context).viewInsets.bottom);
+    var model=Provider.of<FloorModel>(context,listen: false);
 //    model.s();
+    var floor=model.currFloor;
+    if(floor!=null){
+      floorNameController.text=floor.name;
+    }
     return Container(
 //      height: MediaQuery.of(context).size.height,
       alignment: Alignment.bottomCenter,
@@ -209,7 +184,11 @@ class _FloorListPageState extends State<FloorListPage> {
                             ),
                             child: IconButton(
                                 icon: Icon(Icons.close,color: Colors.white),
-                                onPressed: ()=>setState(()=>_addFloor=false)
+                                onPressed: ()=>setState((){
+                                  model.selectFloor(null);
+                                  _input=false;
+                                  floorNameController.clear();
+                                })
                             ),
                           ),
                         )
@@ -218,10 +197,18 @@ class _FloorListPageState extends State<FloorListPage> {
                     Expanded(
                         child: Container(
                           alignment: Alignment.centerRight,
-                          child: FlatButton(
+                          child: TextButton(
                               onPressed: (){
-                                _addFloor=false;
-                                model.onAddFloor(context);
+                                _input=false;
+                                var text=floorNameController.text;
+                                floorNameController.clear();
+
+                                if(floor==null){
+                                  model.onAddFloor(context,text);
+                                }else{
+                                  model.onEditFloor(context,text);
+                                }
+
                               },
                               child: Text("ADD",
                                 style: TextStyle(
@@ -236,7 +223,7 @@ class _FloorListPageState extends State<FloorListPage> {
                 ),
                 TextField(
 //                    onSubmitted: (s) {},
-                  controller: model.floorNameController,
+                  controller: floorNameController,
                   autofocus: true,
                   maxLines: 1,
                   obscureText: false,

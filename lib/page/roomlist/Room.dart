@@ -6,7 +6,7 @@ class Room{
 
   int sort;
 
-  Room({this.name,this.sort});
+  Room({required this.name,this.sort=0});
 
   factory Room.fromJson(Map<String, dynamic> json) {
     return Room(

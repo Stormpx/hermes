@@ -16,16 +16,15 @@ class FeeSnapshot {
 
   double total;
 
-  List<FeeItem> items;
+  List<FeeItem>? items;
 
   FeeSnapshot(
-      {this.date,this.electFee, this.waterFee, this.rent, this.total, this.items,this.electAmount,this.waterAmount});
+      {required this.date,required this.electFee, required this.waterFee, required this.rent, required this.total, this.items,required this.electAmount,required this.waterAmount});
 
 
 
 
   factory FeeSnapshot.fromJson(Map<String, dynamic> json) {
-
     return FeeSnapshot(
       date: Util.parseDay(json['date'] as String),
       electFee: json['electFee'] as double,
@@ -34,7 +33,7 @@ class FeeSnapshot {
       electAmount: json['electAmount'] as double,
       waterAmount: json['waterAmount'] as double,
       total: json['total'] as double,
-      items: (json['items'] as List).map((e) => FeeItem.fromJson(e)).toList(),
+      items: (json['items'] as List?)?.map((e) => FeeItem.fromJson(e)).toList(),
     );
   }
 
@@ -56,20 +55,20 @@ class FeeSnapshot {
 }
 
 class FeeItem {
-  String name;
-  String desc;
+  String? name;
+  String? desc;
   double fee;
 
-  FeeItem({this.name, this.desc, this.fee});
+  FeeItem({ this.name, this.desc, this.fee=0});
 
-  factory FeeItem.get(String name, String desc, double fee) {
+  factory FeeItem.get(String? name, String? desc, double fee) {
     return FeeItem(name: name, desc: desc, fee: fee);
   }
 
   factory FeeItem.fromJson(Map<String, dynamic> json) {
     return FeeItem(
-        name: json['name'] as String,
-        desc: json['desc'] as String,
+        name: json['name'] as String?,
+        desc: json['desc'] as String?,
         fee: json['fee'] as double);
   }
 

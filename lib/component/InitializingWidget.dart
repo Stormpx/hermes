@@ -8,12 +8,11 @@ typedef WidgetBuilder = Widget Function();
 class InitializingWidget extends StatelessWidget {
   bool initialized;
   WidgetBuilder builder;
-  Text loadingText;
+  Text? loadingText;
 
   InitializingWidget(
-      {@required this.builder,
-      this.initialized = true,this.loadingText})
-      : assert(builder != null);
+      {required this.builder,
+      this.initialized = true,this.loadingText});
 
   @override
   Widget build(BuildContext context) {
