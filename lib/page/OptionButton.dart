@@ -51,10 +51,10 @@ class Model extends ChangeNotifier{
     }
 
     var str=getDataEncoded();
-    var d=Directory("/storage/emulated/0/hermes");
+    var file=File("/storage/emulated/0/Downloads/hermes/${Util.formatDay(DateTime.now())}.hermes");
+    var d = file.parent;
     if(! await d.exists())
       await d.create(recursive: true);
-    var file=File("/storage/emulated/0/hermes/${Util.formatDay(DateTime.now())}.hermes");
     await file.writeAsString(str);
 
     Printer.printMapJsonLog(file.path);

@@ -5,50 +5,62 @@ import 'package:archive/archive.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_printer/flutter_printer.dart';
 import 'package:hermes/App.dart';
+import 'package:hermes/page/Rebuild.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:toast/toast.dart';
 
 class ImportModel extends ChangeNotifier{
 
-  int _way=0;
+  int way=0;
 
-  int _total=0;
-  int _index=0;
+  int progress=0;
+
+  bool importing=false;
 
 
-  int get way => _way;
 
-  int get total {
-    return _total;
+  Future<void> importOldVerData(String content) async{
+    Map<String,dynamic> json = jsonDecode(utf8.decode(GZipDecoder().decodeBytes(base64.decode(content))));
+    Printer.printMapJsonLog(json);
+    importing=true;
+    progress=0;
+    notifyListeners();
+    await Rebuild(MapKv(json)).start();
   }
 
-  void importConfig(BuildContext context,String text) async {
-    var str= await getEncryptData(text);
-    if(str==null){
-      return;
-    }
-    Map<String,dynamic> json = jsonDecode(utf8.decode(GZipDecoder().decodeBytes(base64.decode(str))));
+  Future<void> importNewVerData(File dbFile)async{
+    importing=true;
+    progress=0;
+    notifyListeners();
+    return App.switchDatabase(dbFile);
+  }
 
-    Printer.printMapJsonLog(json);
-    _total=json.length;
-    _index=0;
-    for(var e in json.entries){
-     await App.sharedPreferences!.setString(e.key, e.value);
-      _index++;
+  Future<void> importConfig(String text) async {
+    try {
+      if(way==1){
+            var file = new File(text);
+            if(!await file.exists())
+              return;
+            if(file.path.endsWith("hermes.db")){
+              await importNewVerData(file);
+            }else{
+              var str=await file.readAsString();
+              await importOldVerData(str);
+            }
+          }else{
+            await importOldVerData(text);
+          }
+    } catch (e) {
+      Printer.error(e);
+      importing=false;
       notifyListeners();
+      throw e;
     }
-
-    Toast.show("数据导入完毕", duration: 2,gravity: Toast.bottom);
-    Navigator.pop(context);
   }
 
   Future<String?> getEncryptData(String text) async{
-    if(_way==1){
+    if(way==1){
       try {
-        var status=await Permission.storage.request();
-        if(!status.isGranted){
-          return null;
-        }
         var file = new File(text);
         if(! await file.exists())
           return null;
@@ -63,11 +75,11 @@ class ImportModel extends ChangeNotifier{
 
 
   void setWay(int value){
-    _way=value;
+    way=value;
     notifyListeners();
   }
 
-  int get index => _index;
+  int get index => progress;
 }
 //eyLov5nkuKrlkow6b3B0aW9uOmZlZSI6Ilt7XCJuYW1lXCI6XCLmpbzmoq/otLlcIixcImZlZVwiOjQuMH1dIiwiaGVybWVzOmZsb29yOisxIjoiW3tcIm5hbWVcIjpcIueahOWTh+WTplwiLFwic29ydFwiOjk5fV0iLCJoZW1lcnM6Zmxvb3JzIjoiW3tcIm5hbWVcIjpcIjFcIixcInNvcnRcIjo5OX0se1wibmFtZVwiOlwiMlwiLFwic29ydFwiOjk5fSx7XCJuYW1lXCI6XCJhXCIsXCJzb3J0XCI6OTl9LHtcIm5hbWVcIjpcImJcIixcInNvcnRcIjo5OX0se1wibmFtZVwiOlwi5L2g5aaIXCIsXCJzb3J0XCI6OTl9LHtcIm5hbWVcIjpcIuWVilwiLFwic29ydFwiOjk5fSx7XCJuYW1lXCI6XCLlm5vmpbxcIixcInNvcnRcIjowfSx7XCJuYW1lXCI6XCLnmoRcIixcInNvcnRcIjo5OX0se1wibmFtZVwiOlwi55qE5ZOH55qE5ZOHXCIsXCJzb3J0XCI6OTl9LHtcIm5hbWVcIjpcIuiNieS7luS7rOeahOWTh+eahFwiLFwic29ydFwiOjk5fV0iLCLov5nkuKrlkoxfTEFTVF9TRUxFQ1QiOiIyMDIwLTEyLTA1Iiwi6L+Z5Liq5ZKMOmZlZSI6IntcInJlbnRcIjozMC4wLFwiZWxlY3RGZWVcIjoxLjAsXCJ3YXRlckZlZVwiOjIuMH0iLCLov5nkuKrlkow6ZGF0ZToyMDIwLTEyLTA1Ijoie1wiZGF0ZVwiOlwiMjAyMC0xMi0wNSAxMTo1NTo1NS42MDExNDJcIixcImVsZWN0XCI6OTAsXCJ3YXRlclwiOjEwMH0iLCLov5nkuKrlkow6cm9vbTpmZWU6c25hcHNob3Q6MjAyMC0xMi0wMiI6IntcImRhdGVcIjpcIjIwMjAtMTItMDJcIixcImVsZWN0RmVlXCI6MS4wLFwid2F0ZXJGZWVcIjoyLjAsXCJyZW50XCI6MzAuMCxcInRvdGFsXCI6OTQuMCxcIml0ZW1zXCI6W3tcIm5hbWVcIjpcIueUtei0uVwiLFwiZGVzY1wiOlwiNTAgLSAxMCA9IDQwIOW6plxcbjQwICogMS4wID0gNDAuMCDlhYNcIixcImZlZVwiOjQwLjB9LHtcIm5hbWVcIjpcIuawtOi0uVwiLFwiZGVzY1wiOlwiNDAgLSAzMCA9IDEwIOWNh1xcbjEwICogMi4wID0gMjAuMCDlhYNcIixcImZlZVwiOjQwLjB9LHtcIm5hbWVcIjpcIuenn+mHkVwiLFwiZGVzY1wiOm51bGwsXCJmZWVcIjozMC4wfSx7XCJuYW1lXCI6XCLmpbzmoq/otLlcIixcImRlc2NcIjpudWxsLFwiZmVlXCI6NC4wfSx7XCJuYW1lXCI6XCLmgLvmlLbotLlcIixcImRlc2NcIjpudWxsLFwiZmVlXCI6OTQuMH1dfSIsImhlcm1lczpmbG9vcjor5Zub5qW8IjoiW3tcIm5hbWVcIjpcIui/meS4quWSjFwiLFwic29ydFwiOjk5fV0iLCLov5nkuKrlkow6ZGF0ZToyMDIwLTEyLTAyIjoie1wiZGF0ZVwiOlwiMjAyMC0xMi0wMiAxMzoxNjowMy4yNzQ1OTFcIixcImVsZWN0XCI6NTAsXCJ3YXRlclwiOjQwfSIsIui/meS4quWSjDpyb29tOmZlZTpzbmFwc2hvdDoyMDIwLTEyLTA1Ijoie1wiZGF0ZVwiOlwiMjAyMC0xMi0wNVwiLFwiZWxlY3RGZWVcIjoxLjAsXCJ3YXRlckZlZVwiOjIuMCxcInJlbnRcIjozMC4wLFwidG90YWxcIjoxOTQuMCxcIml0ZW1zXCI6W3tcIm5hbWVcIjpcIueUtei0uVwiLFwiZGVzY1wiOlwiOTAgLSA1MCA9IDQwIOW6plxcbjQwICogMS4wID0gNDAuMCDlhYNcIixcImZlZVwiOjQwLjB9LHtcIm5hbWVcIjpcIuawtOi0uVwiLFwiZGVzY1wiOlwiMTAwIC0gNDAgPSA2MCDljYdcXG42MCAqIDIuMCA9IDEyMC4wIOWFg1wiLFwiZmVlXCI6NDAuMH0se1wibmFtZVwiOlwi56ef6YeRXCIsXCJkZXNjXCI6bnVsbCxcImZlZVwiOjMwLjB9LHtcIm5hbWVcIjpcIualvOair+i0uVwiLFwiZGVzY1wiOm51bGwsXCJmZWVcIjo0LjB9LHtcIm5hbWVcIjpcIuaAu+aUtui0uVwiLFwiZGVzY1wiOm51bGwsXCJmZWVcIjoxOTQuMH1dfSIsIui/meS4quWSjDpkYXRlOjIwMjAtMTEtMjciOiJ7XCJkYXRlXCI6XCIyMDIwLTExLTI3IDEyOjAwOjAwLjAwMFpcIixcImVsZWN0XCI6MTAsXCJ3YXRlclwiOjMwfSIsImhlcm1lczpmbG9vcjor55qEIjoiW3tcIm5hbWVcIjpcIm5cIixcInNvcnRcIjo5OX1dIn0=
 

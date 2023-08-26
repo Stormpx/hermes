@@ -10,15 +10,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hermes/App.dart';
 import 'package:hermes/kit/Util.dart';
+import 'package:hermes/model/Database.dart';
 import 'package:hermes/model/FeeResult.dart';
-import 'package:hermes/page/floor/Floor.dart';
-import 'package:hermes/page/roomlist/Room.dart';
-import 'package:hermes/page/snapshot/RoomSanpshotPage.dart';
-import 'package:hermes/page/snapshot/RoomSnapshotModel.dart';
+import 'package:hermes/page/room/Model.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:toast/toast.dart';
@@ -304,7 +302,7 @@ class RoomModel extends ChangeNotifier{
 
     optionFeeList.availableList.forEach((element) {
       total += element.fee;
-      list.add(FeeItem.get(element.name, null, element.fee));
+      // list.add(FeeItem.get(element.name, null, element.fee));
     });
 
     list.add(FeeItem.get("总收费", null, total));
@@ -335,12 +333,12 @@ class RoomModel extends ChangeNotifier{
   }
 
   void showSnapshot(BuildContext context) async{
-    await Navigator.push(context, MaterialPageRoute(
-        builder: (c)=>ChangeNotifierProvider(
-          create: (c)=>RoomSnapshotModel(room),
-          child: RoomSnapshotPage(),
-        )
-    ));
+    // await Navigator.push(context, MaterialPageRoute(
+    //     builder: (c)=>ChangeNotifierProvider(
+    //       create: (c)=>RoomSnapshotModel(room),
+    //       child: RoomSnapshotPage(),
+    //     )
+    // ));
   }
 
   void capturePng(Uint8List pngBytes) async{
@@ -348,7 +346,7 @@ class RoomModel extends ChangeNotifier{
     if(!status.isGranted){
       return null;
     }
-    var dir = App.dir(dir:"screenshot/");
+    var dir = App.dir(dir:"screenshot");
     if(! await dir.exists())
       await dir.create(recursive: true);
     var file=File("${dir.path}${Uuid().v4()}.png");

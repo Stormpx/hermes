@@ -19,7 +19,7 @@ class CardColumnWidget extends StatelessWidget {
 
       //设置shape，这里设置成了R角
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20.0),topRight: Radius.circular(20.0)),
+        borderRadius: BorderRadius.all(Radius.circular(20.0)),
       ),
       //对Widget截取的行为，比如这里 Clip.antiAlias 指抗锯齿
       clipBehavior: Clip.antiAlias,

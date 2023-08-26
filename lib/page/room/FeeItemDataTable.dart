@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hermes/model/FeeResult.dart';
+import 'package:hermes/page/room/Model.dart';
 
 class FeeItemDataTable extends StatelessWidget {
 

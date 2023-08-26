@@ -5,7 +5,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:hermes/component/FeeItemDataTable.dart';
+import 'package:hermes/page/room/FeeItemDataTable.dart';
 import 'package:hermes/component/GreatGradientButton.dart';
 import 'package:hermes/HermesState.dart';
 import 'package:hermes/component/InitializingWidget.dart';
@@ -423,7 +423,6 @@ class _RoomPageState extends HermesState<RoomPage> {
       list = [Text("数据不够算不出来")];
     } else {
       list = [
-
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[

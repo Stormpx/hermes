@@ -1,4 +1,5 @@
 import 'package:hermes/kit/Util.dart';
+import 'package:hermes/page/room/Model.dart';
 
 class FeeSnapshot {
 
@@ -54,40 +55,3 @@ class FeeSnapshot {
   }
 }
 
-class FeeItem {
-  String? name;
-  String? desc;
-  double fee;
-
-  FeeItem({ this.name, this.desc, this.fee=0});
-
-  factory FeeItem.get(String? name, String? desc, double fee) {
-    return FeeItem(name: name, desc: desc, fee: fee);
-  }
-
-  factory FeeItem.fromJson(Map<String, dynamic> json) {
-    return FeeItem(
-        name: json['name'] as String?,
-        desc: json['desc'] as String?,
-        fee: json['fee'] as double);
-  }
-
-  Map<String, dynamic> toJson() => {'name': name, 'desc': desc, 'fee': fee};
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is FeeItem &&
-          runtimeType == other.runtimeType &&
-          name == other.name &&
-          desc == other.desc &&
-          fee == other.fee;
-
-  @override
-  int get hashCode => name.hashCode ^ desc.hashCode ^ fee.hashCode;
-
-  @override
-  String toString() {
-    return 'FeeItem{name: $name, desc: $desc, fee: $fee}';
-  }
-}

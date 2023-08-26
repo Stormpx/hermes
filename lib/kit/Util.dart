@@ -24,12 +24,12 @@ class Util{
   }
 
   static DateTime firstDayOfMonth(DateTime month) {
-    return DateTime.utc(month.year, month.month, 1, 12);
+    return DateTime.utc(month.year, month.month, 1);
   }
 
   static DateTime lastDayOfMonth(DateTime month) {
-    final date = month.month < 12 ? DateTime.utc(month.year, month.month + 1, 1, 12) : DateTime.utc(month.year + 1, 1, 1, 12);
-    return date.subtract(const Duration(days: 1));
+    final date = month.month < 12 ? DateTime.utc(month.year, month.month + 1, 1, 0) : DateTime.utc(month.year + 1, 1, 1, 0);
+    return date.subtract(const Duration(seconds: 1));
   }
 
 }

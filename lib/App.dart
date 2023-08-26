@@ -1,51 +1,154 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
+import 'package:drift/drift.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_printer/flutter_printer.dart';
 import 'package:hermes/model/Database.dart';
-import 'package:package_info/package_info.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:path/path.dart' as p;
 class App {
 
-  static String _version="2.2.1";
+  static final String _hermesVersionKey="hermes:version";
 
-  static String _hermesKeyPrefix="hermes:data:";
+  static final String _hermesKeyPrefix="hermes:data:";
 
-  static SharedPreferences? _sharedPreferences;
+  static PackageInfo? packageInfo;
 
-  static Directory? _directory;
+  static SharedPreferences? sharedPreferences;
 
-  static Directory? _exDirectory;
+  static Directory? directory;
 
-  static HermesDatabase _database=HermesDatabase();
+  static Directory? exDirectory;
+
+  static Directory? downloadDirectory;
+
+  static HermesDatabase? _database=HermesDatabase();
+
+  static Future<Directory?> _getDownloadPath() async {
+    Directory? directory;
+    try {
+      if (Platform.isIOS) {
+        directory = await getApplicationDocumentsDirectory();
+      } else {
+        directory = Directory('/storage/emulated/0/Download');
+        // Put file in global download folder, if for an unknown reason it didn't exist, we fallback
+        // ignore: avoid_slow_async_io
+        if (!await directory.exists()) directory = await getExternalStorageDirectory();
+      }
+    } catch (err, stack) {
+      print("Cannot get download folder path");
+    }
+    return directory;
+  }
 
   static Future init() async {
-    _sharedPreferences = await SharedPreferences.getInstance();
-    _directory = await getApplicationDocumentsDirectory();
-    _exDirectory = (await getExternalStorageDirectory())!;
+    packageInfo = await PackageInfo.fromPlatform();
+    sharedPreferences = await SharedPreferences.getInstance();
+    directory = await getApplicationDocumentsDirectory();
 
-    Printer.printMapJsonLog(_exDirectory==null);
-    var versionKey="hermes:version";
-    var version=_sharedPreferences!.getString(versionKey);
-    if(version!=null){
-      PackageInfo packageInfo = await PackageInfo.fromPlatform();
-      _sharedPreferences!.setString(versionKey, packageInfo.version);
+    exDirectory = (await getExternalStorageDirectory())!;
+    downloadDirectory=Directory("${(await _getDownloadPath())!.path}/hermes/");
+
+    var version=sharedPreferences!.getString(_hermesVersionKey);
+    if(version==null){
+      setCurrentVersion();
     }
+
+    print(dataVersion);
+    print(appVersion);
+    print(directory);
+    print(exDirectory);
+    print(downloadDirectory);
+    print(await getExternalCacheDirectories());
+
+
+  }
+
+
+
+  static void setCurrentVersion(){
+    sharedPreferences!.setString(_hermesVersionKey, packageInfo!.version);
   }
 
   static Directory dir({String? dir}){
-    return Directory("/storage/emulated/0/hermes/${dir??""}");
+    return Directory(Uri.file(downloadDirectory!.path).resolve(dir??"").toFilePath(windows: Platform.isWindows));
   }
 
 
+  static Future<void> switchDatabase(File file)async{
+    final dbFolder = await getApplicationDocumentsDirectory();
+    var rand = Random.secure();
+    var filename = "tmp-${List.generate(10, (index) => rand.nextInt(10)).join()}.sqlite";
+    print(p.join(dbFolder.path,filename));
+    var db = await file.copy(p.join(dbFolder.path,filename));
+    var database = HermesDatabase(db);
+    try {
+      await database.customStatement("select count(*) from hermes");
+      await database.close();
+      await _database!.close();
+      var hermesDbFile = await databaseFile();
+      await hermesDbFile.delete();
+      await db.rename(hermesDbFile.path);
+      exitApp();
+    } catch (e) {
+      await db.delete();
+      await database.close();
+      throw e;
+    }
+
+  }
+
+  static void exitApp(){
+    if(Platform.isAndroid){
+      SystemNavigator.pop();
+    }else{
+      exit(0);
+    }
+  }
+
+  static Ver get dataVersion => Ver(sharedPreferences!.getString(App._hermesVersionKey)??"0.0.0");
+
+  static Ver get appVersion => Ver(packageInfo!.version);
+
   static String get hermesKeyPrefix => _hermesKeyPrefix;
 
-  static SharedPreferences? get sharedPreferences => _sharedPreferences;
 
-  static Directory? get directory => _directory;
+  static HermesDatabase get database => _database!;
 
-  static Directory? get exDirectory => _exDirectory;
+}
 
-  static HermesDatabase get database => _database;
+class Ver extends Comparable<Ver>{
+  String version;
+
+  Ver(this.version);
+
+  @override
+  int compareTo(Ver other) {
+    return _getExtendedVersionNumber(version).compareTo(_getExtendedVersionNumber(other.version));
+  }
+
+  bool operator <(other)=> compareTo(other)<0;
+  @override
+  bool operator ==(covariant Ver other)=> compareTo(other)==0;
+
+  bool operator <=(other)=> this<other||this==other;
+
+  bool operator >(other) => !(this<=other);
+
+  bool operator >=(other) => !(this<other);
+
+  int _getExtendedVersionNumber(String version) {
+    List versionCells = version.split('.');
+    versionCells = versionCells.map((i) => int.parse(i)).toList();
+    return versionCells[0] * 100000 + versionCells[1] * 1000 + versionCells[2];
+  }
+
+  @override
+  String toString() {
+    return 'Ver{version: $version}';
+  }
 }

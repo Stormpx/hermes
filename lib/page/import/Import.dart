@@ -8,7 +8,9 @@ import 'package:hermes/HermesState.dart';
 import 'package:hermes/component/FloatButton.dart';
 import 'package:hermes/component/InitializingWidget.dart';
 import 'package:hermes/page/import/ImportModel.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:toast/toast.dart';
 
 class Import extends StatefulWidget {
   @override
@@ -51,12 +53,20 @@ class _ImportState extends HermesState<Import> {
           color: Colors.white,
           size: 30,
         ),
-        onPressed: () => model.importConfig(context,configController.text),
+        onPressed: () async{
+          try {
+            await model.importConfig(configController.text);
+            Toast.show("数据导入完毕", duration: 2,gravity: Toast.bottom);
+            Navigator.pop(context);
+          } catch (e) {
+            Toast.show("导入失败..");
+          }
+        },
 
       ),
       body: InitializingWidget(
-        initialized: model.total<=0,
-        loadingText: Text("读取数据${model.total}条 正在处理 ${model.index}/${model.total} "),
+        initialized: !model.importing,
+        loadingText: Text("导入数据中"),
         builder: (){
           return GestureDetector(
               onTap: () {
@@ -73,7 +83,11 @@ class _ImportState extends HermesState<Import> {
                           }),
                         ),
                         Flexible(
-                          child: RadioListTile<int>(title: Text("文件路径"),value: 1, groupValue: model.way, onChanged: (value){
+                          child: RadioListTile<int>(title: Text("文件路径"),value: 1, groupValue: model.way, onChanged: (value)async{
+                            var status=await Permission.storage.request();
+                            if(!status.isGranted){
+                              return;
+                            }
                             model.setWay(value!);
                           }),
                         )

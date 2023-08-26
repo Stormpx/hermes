@@ -1,147 +1,177 @@
-
-
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:drift/drift.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hermes/App.dart';
 import 'package:hermes/kit/Util.dart';
-import 'package:hermes/page/floor/Floor.dart';
-import 'package:hermes/page/import/Import.dart';
-import 'package:hermes/page/import/ImportModel.dart';
-import 'package:hermes/page/roomlist/FloorRoomModel.dart';
-import 'package:hermes/page/roomlist/FloorRoomsPage.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hermes/model/Data.dart';
+import 'package:hermes/model/Database.dart';
+import 'package:hermes/model/Repository.dart';
 import 'package:toast/toast.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_printer/flutter_printer.dart';
 
-class FloorModel extends ChangeNotifier{
-
-  static final String FLOOR_LIST_KEYS="hemers:floors";
-
-
-  List<Floor> _list=[
-
-  ];
-
-  Floor? _currFloor;
-
-  FloorModel(){
-
-    _init();
-
-  }
-
-
-  List<Floor> get list {
-    return _list;
-  }
-
-  Floor? get currFloor{
-    return _currFloor;
-  }
-
-  void _init() async {
-    var jsonArray=App.sharedPreferences!.getString(FLOOR_LIST_KEYS);
-    if(jsonArray==null||jsonArray.isEmpty){
-
-      _list=[];
-    }else {
-      List<dynamic> list = jsonDecode(jsonArray);
-
-      List<Floor> floors = list.map((e) => Floor.fromJson(e)).toList();
-//      floors.sort((f, f2) => f.name.compareTo(f2.name));
-      _list = floors;
-    }
-
-    notifyListeners();
-
-  }
-
+class FloorModel extends ChangeNotifier {
+  static final String FLOOR_LIST_KEYS = "hemers:floors";
 
   TextEditingController floorNameController = TextEditingController();
   TextEditingController floorSortController = TextEditingController();
 
+  int buildingId;
 
-  void floorReorder(int oldIndex,int newIndex) async{
-    if(oldIndex<newIndex){
-      newIndex--;
-    }
-      var floor = _list.removeAt(oldIndex);
-      _list.insert(newIndex, floor);
-    var b=await App.sharedPreferences!.setString(FLOOR_LIST_KEYS,jsonEncode(list));
-    Printer.printMapJsonLog("content???????");
-      notifyListeners();
+  List<FloorWithRooms> list = [];
+
+  int? selectedFloorId;
+
+  Floor? currFloor;
+
+  List<Floor> get floor => list.map((e) => e.floor).toList();
+
+  FloorModel(this.buildingId) {
+    _init();
   }
 
-  void selectFloor(Floor? floor){
-    this._currFloor=floor;
+  Future<void> _init() async {
+
+    var result = await Repo.floorRepository.findAllByBuilding(buildingId);
+    Printer.info(result);
+    list = result;
+
     notifyListeners();
   }
 
+  List<Room> getRooms(int floorId) {
+    return list
+            .where((element) => element.floor.id == floorId)
+            .singleOrNull
+            ?.rooms ??
+        [];
+  }
 
-  void onAddFloor(BuildContext context,String name) async {
-    var f=Floor(
-        name: name,
-        sort: 99
-    );
-    if(f.name.isEmpty){
+  Future<void> reloadRoomInFloor(int floorId,int roomId) async{
+    var floorWithRoom = list.where((element) => element.floor.id==floorId).singleOrNull;
+    if(floorWithRoom==null){
       return;
     }
+    var room = await Repo.roomRepository.findById(roomId);
+    if(room==null){
+      return;
+    }
+    var index = floorWithRoom.rooms.indexWhere((r) => r.id==roomId);
+    floorWithRoom.rooms.removeAt(index);
+    floorWithRoom.rooms.insert(index,room);
 
-    if(list.any((element) => element==f)){
+    notifyListeners();
+
+  }
+
+  void floorReorder(int oldIndex, int newIndex) async {
+
+    var floorWithRooms = list.elementAt(oldIndex);
+    if(newIndex>oldIndex) {
+      list.insert(newIndex, floorWithRooms);
+      list.removeAt(oldIndex);
+    }else {
+      list.removeAt(oldIndex);
+      list.insert(newIndex, floorWithRooms);
+    }
+    Repo.floorRepository.runOnScope(()async{
+      for(final elem in list.indexed) {
+        await Repo.floorRepository.save(elem.$2.floor.copyWith(sort: Value(elem.$1)));
+      }
+    });
+    // notifyListeners();
+  }
+
+  void selectFloor(Floor? floor) {
+
+    this.selectedFloorId=floor?.id;
+    notifyListeners();
+  }
+
+  Future<bool> addFloor(String name) async {
+    if (name.isEmpty) {
+      return false;
+    }
+    var f = Floor(buildingId: buildingId, name: name, sort: 99);
+
+    if (await Repo.floorRepository.nameExists(buildingId, name)) {
       Toast.show("不能添加已存在的item", gravity: Toast.bottom);
-      return ;
-    }
-    list.add(f);
-//    list.sort((f1,f2){
-//      return f1.name.compareTo(f2.name);
-//    });
-
-
-
-    var b=await App.sharedPreferences!.setString(FLOOR_LIST_KEYS,jsonEncode(list));
-
-    notifyListeners();
-  }
-
-  void onEditFloor(BuildContext context,String name) async{
-    if(name.isEmpty){
-      return;
+      return false;
     }
 
-    this._currFloor?.name=name;
+    f = await Repo.floorRepository.save(f);
 
-    var b=await App.sharedPreferences!.setString(FLOOR_LIST_KEYS,jsonEncode(list));
+    list.add(FloorWithRooms(f, []));
 
-    this._currFloor=null;
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> updateFloor(int floorId,String name) async {
+    var floor = list.where((element) => element.floor.id==floorId).map((e) => e.floor).firstOrNull;
+
+    if(floor==null){
+      return false;
+    }
+
+    floor = await Repo.floorRepository.save(floor.copyWith(name: name));
+
+    await _init();
+
+    notifyListeners();
+    return true;
+  }
+
+  Future<void> deleteFloor(FloorWithRooms floorWithRooms) async{
+    Printer.printMapJsonLog(floorWithRooms);
+
+    await Repo.roomRepository.runOnScope(()async {
+      for(final room in floorWithRooms.rooms){
+        await Repo.roomRepository.del(room.id as Object);
+      }
+      await Repo.floorRepository.del(floorWithRooms.floor.id as Object);
+    });
+
+    list.removeWhere((element) => element.floor.id==floorWithRooms.floor.id);
+
     notifyListeners();
   }
 
 
-  void onDelFloor(BuildContext buildContext,Floor floor,int index){
+  Future<bool> addRoom(int floorId, String name) async {
 
-    _list.removeAt(index);
+
+    var newRoom = await Repo.roomRepository.save(Room(floorId: floorId,sort: 99, name: name,rent: 0,electFee: 0,waterFee: 0));
+
+    getRooms(floorId).add(newRoom);
+
     notifyListeners();
+    return true;
   }
 
-  void onEnterFloor(BuildContext context,Floor floor){
-//    notifyListeners();
-    print("enter floor ${floor.name} ");
-    Navigator.push(context, MaterialPageRoute(
-        builder: (c)=>ChangeNotifierProvider(
-            create: (c)=>FloorRoomModel(floor),
-            child: FloorRoomsPage(),
-        )
-    ));
+  Future<bool> updateRoom(int roomId, String name) async{
+
+    var oldRoom = await Repo.roomRepository.findById(roomId);
+    if(oldRoom==null){
+        return false;
+    }
+    Repo.roomRepository.save(oldRoom.copyWith(name:name));
+
+    await _init();
+    notifyListeners();
+    return true;
+  }
+
+  Future<void> delRoom(FloorWithRooms floorWithRooms,Room room) async{
+    await Repo.roomRepository.runOnScope(() => Repo.roomRepository.del(room.id!));
+    floorWithRooms.rooms.remove(room);
+    notifyListeners();
   }
 
 }

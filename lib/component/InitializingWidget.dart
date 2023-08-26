@@ -7,12 +7,15 @@ typedef WidgetBuilder = Widget Function();
 
 class InitializingWidget extends StatelessWidget {
   bool initialized;
-  WidgetBuilder builder;
+  Widget? child;
+  WidgetBuilder? builder;
   Text? loadingText;
 
   InitializingWidget(
-      {required this.builder,
-      this.initialized = true,this.loadingText});
+      {this.child, this.builder,
+      this.initialized = true,this.loadingText}){
+    assert (child!=null || builder!=null);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +23,7 @@ class InitializingWidget extends StatelessWidget {
       return Container(
           height: double.maxFinite,
           width: double.maxFinite,
+          color: Colors.white,
           child: Stack(
             alignment: Alignment.center,
             children: <Widget>[
@@ -39,7 +43,10 @@ class InitializingWidget extends StatelessWidget {
             ],
           ));
     } else {
-      return builder();
+      if(child!=null){
+        return child!;
+      }
+      return builder!();
     }
   }
 }
