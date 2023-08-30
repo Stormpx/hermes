@@ -11,7 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:toast/toast.dart';
 
 void main() {
-  Printer.enable = true;
+  Printer.enable = false;
   assert(() {
     NativeDatabase.closeExistingInstances();
     return true;

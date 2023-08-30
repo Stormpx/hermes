@@ -36,6 +36,7 @@ class RoomSnapshotRecord{
   String get startDate => Util.formatDay(snapshot.snapshotStartDate);
   String get endDate => Util.formatDay(snapshot.snapshotEndDate);
 
+
   RoomSnapshotRecord(this.snapshot, this.items);
 
   @override

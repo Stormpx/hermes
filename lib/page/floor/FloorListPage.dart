@@ -25,6 +25,8 @@ class _FloorListPageState extends HermesState<FloorListPage> {
   final FocusNode blankNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
 
+  final GlobalKey _slidableGroup = GlobalKey();
+
   TextEditingController floorNameController = TextEditingController();
   TextEditingController floorSortController = TextEditingController();
 
@@ -40,159 +42,164 @@ class _FloorListPageState extends HermesState<FloorListPage> {
   Widget _floorBuilder(FloorModel model) {
     var list = model.list;
 //    print(list);
-    return ReorderableListView.builder(
-      scrollDirection: Axis.vertical,
-      scrollController: _scrollController,
-      buildDefaultDragHandles: false,
-      itemBuilder: (context, index) {
-        var floorWithRooms = list[index];
-        var key = ObjectKey(floorWithRooms.floor.name);
-        return Slidable(
-          key: key,
-          endActionPane: ActionPane(
-            motion: ScrollMotion(),
-            children: [
-              SlidableAction(
-                  label: '编辑',
-                  backgroundColor: Colors.green,
-                  icon: Icons.edit,
-                  onPressed: (BuildContext ctx) async {
-                    showDialog(
-                        context: context,
-                        builder: (ctx) {
-                          return _floorForm(
-                              initValue: {"name": floorWithRooms.floor.name},
-                              onSubmit: (data) async {
-                                var name = data["name"] as String;
-                                if (await model.updateFloor(
-                                    floorWithRooms.floor.id!, name)) {
-                                  Navigator.of(context).pop();
-                                }
-                              });
-                        });
-                  }),
-              SlidableAction(
-                  label: '删除',
-                  backgroundColor: Colors.red,
-                  icon: Icons.delete,
-                  onPressed: (BuildContext context) async {
-                    var confirm = await showDeleteConfirmDialog([
-                      Text("您确定要删除楼层 ${floorWithRooms.floor.name} 吗?"),
-                      Text("删除也会将套间一并删除")
-                    ]);
-                    if (confirm ?? false) {
-                      model.deleteFloor(floorWithRooms);
-                    }
-                  })
-            ],
-          ),
-          child: ExpansionTile(
-            subtitle: Text("现有${floorWithRooms.rooms.length}个套间"),
-            trailing: FractionallySizedBox(
-              widthFactor: 0.2,
-              child: Row(
-                children: [
-                  IconButton(
-                      icon: Icon(
-                        Icons.add,
-                        color: Colors.green,
-                      ),
-                      onPressed: () {
-                        showDialog(
-                            context: context,
-                            builder: (ctx) {
-                              return _roomForm(
-                                  title: "新增套间",
-                                  onSubmit: (data) async {
-                                    if (await model.addRoom(
-                                        floorWithRooms.floor.id!,
-                                        data["name"] as String)) {
-                                      Navigator.of(context).pop();
-                                    }
-                                  });
-                            });
-                      }),
-                  ReorderableDragStartListener(
-                    index: index,
-                    child: Icon(Icons.list),
-                  ),
-                ],
-              ),
+    return SlidableAutoCloseBehavior(
+      child: ReorderableListView.builder(
+        scrollDirection: Axis.vertical,
+        scrollController: _scrollController,
+        buildDefaultDragHandles: false,
+        itemBuilder: (context, index) {
+          var floorWithRooms = list[index];
+          var key = ObjectKey(floorWithRooms.floor.name);
+          return Slidable(
+            key: key,
+            groupTag: _slidableGroup,
+            endActionPane: ActionPane(
+              motion: ScrollMotion(),
+              children: [
+                SlidableAction(
+                    label: '编辑',
+                    backgroundColor: Colors.green,
+                    icon: Icons.edit,
+                    onPressed: (BuildContext ctx) async {
+                      showDialog(
+                          context: context,
+                          builder: (ctx) {
+                            return _floorForm(
+                                initValue: {"name": floorWithRooms.floor.name},
+                                onSubmit: (data) async {
+                                  var name = data["name"] as String;
+                                  if (await model.updateFloor(
+                                      floorWithRooms.floor.id!, name)) {
+                                    Navigator.of(context).pop();
+                                  }
+                                });
+                          });
+                    }),
+                SlidableAction(
+                    label: '删除',
+                    backgroundColor: Colors.red,
+                    icon: Icons.delete,
+                    onPressed: (BuildContext context) async {
+                      var confirm = await showDeleteConfirmDialog([
+                        Text("您确定要删除楼层 ${floorWithRooms.floor.name} 吗?"),
+                        Text("删除也会将套间一并删除")
+                      ]);
+                      if (confirm ?? false) {
+                        model.deleteFloor(floorWithRooms);
+                      }
+                    })
+              ],
             ),
-            title: Text(
-              floorWithRooms.floor.name,
-              softWrap: false,
-              overflow: TextOverflow.fade,
-              style: TextStyle(fontSize: 18.0),
-            ),
-            onExpansionChanged: (expand) {
-              model.selectFloor(!expand ? null : floorWithRooms.floor);
-            },
-            children: [
-              ListView.builder(
-                shrinkWrap: true,
-                itemBuilder: (ctx, index) {
-                  var room = floorWithRooms.rooms[index];
-                  return ListTile(
-                    title: Text(
-                      room.name,
-                      softWrap: false,
-                      overflow: TextOverflow.fade,
-                      style: TextStyle(fontSize: 16.0),
-                    ),
-                    isThreeLine: true,
-                    subtitle: Text(
-                        "${room.rent ?? 0}  ${room.electFee ?? 0}元/度   ${room.waterFee ?? 0}元/吨"),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit_attributes_outlined),
-                          onPressed: () {
-                            showDialog(
-                                context: context,
-                                builder: (ctx) => _roomForm(
-                                    title: "编辑套间名称",
-                                    initValue: {"name": room.name},
-                                    onSubmit: (data) async{
-                                      if(await model.updateRoom(room.id!,data["name"]as String)){
+            child: ExpansionTile(
+              subtitle: Text("现有${floorWithRooms.rooms.length}个套间"),
+              trailing: FractionallySizedBox(
+                widthFactor: 0.2,
+                child: Row(
+                  children: [
+                    IconButton(
+                        icon: Icon(
+                          Icons.add,
+                          color: Colors.green,
+                        ),
+                        onPressed: () {
+                          showDialog(
+                              context: context,
+                              builder: (ctx) {
+                                return _roomForm(
+                                    title: "新增套间",
+                                    onSubmit: (data) async {
+                                      if (await model.addRoom(
+                                          floorWithRooms.floor.id!,
+                                          data["name"] as String)) {
                                         Navigator.of(context).pop();
                                       }
-                                    }
-                                ));
-                          },
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.delete_outline_outlined),
-                          onPressed: () async {
-                            var confirm = await showDeleteConfirmDialog([
-                              Text("您确定要删除套间 ${room.name} 吗?"),
-                            ]);
-                            if (confirm ?? false) {
-                              model.delRoom(floorWithRooms,room);
-                            }
-                          },
-                        )
-                      ],
+                                    });
+                              });
+                        }),
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Icon(Icons.list),
                     ),
-                    onTap: (){
-                      _enterRoom(model,room);
-                    },
-                  );
-                },
-                itemCount: floorWithRooms.rooms.length,
-              )
-            ],
-          ),
-        );
-      },
-      itemCount: list.length,
-      onReorder: (oldIndex, newIndex) {
-        Printer.printMapJsonLog("$oldIndex------$newIndex");
-        model.floorReorder(oldIndex, newIndex);
-      },
-      physics: ClampingScrollPhysics(),
+                  ],
+                ),
+              ),
+              title: Text(
+                floorWithRooms.floor.name,
+                softWrap: false,
+                overflow: TextOverflow.fade,
+                style: TextStyle(fontSize: 18.0),
+              ),
+              onExpansionChanged: (expand) {
+                model.selectFloor(!expand ? null : floorWithRooms.floor);
+              },
+              children: [
+                ListView.builder(
+                  shrinkWrap: true,
+                  itemBuilder: (ctx, index) {
+                    var room = floorWithRooms.rooms[index];
+                    return ListTile(
+                      title: Text(
+                        room.name,
+                        softWrap: false,
+                        overflow: TextOverflow.fade,
+                        style: TextStyle(fontSize: 16.0),
+                      ),
+                      isThreeLine: true,
+                      subtitle: Text(
+                          "${room.rent ?? 0}  ${room.electFee ?? 0}元/度   ${room.waterFee ?? 0}元/吨"),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit_attributes_outlined),
+                            onPressed: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (ctx) => _roomForm(
+                                      title: "编辑套间名称",
+                                      initValue: {"name": room.name},
+                                      onSubmit: (data) async{
+                                        if(await model.updateRoom(room.id!,data["name"]as String)){
+                                          Navigator.of(context).pop();
+                                        }
+                                      }
+                                  ));
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete_outline_outlined),
+                            onPressed: () async {
+                              var confirm = await showDeleteConfirmDialog([
+                                Text("您确定要删除套间 ${room.name} 吗?"),
+                              ]);
+                              if (confirm ?? false) {
+                                model.delRoom(floorWithRooms,room);
+                              }
+                            },
+                          )
+                        ],
+                      ),
+                      onTap: (){
+                        _enterRoom(model,room);
+                      },
+                    );
+                  },
+                  itemCount: floorWithRooms.rooms.length,
+                )
+              ],
+            ),
+          );
+        },
+        itemCount: list.length,
+        onReorder: (oldIndex, newIndex) {
+          Printer.printMapJsonLog("$oldIndex------$newIndex");
+          model.floorReorder(oldIndex, newIndex);
+        },
+        physics: ClampingScrollPhysics(),
+      ),
+
     );
+
   }
 
   void _enterRoom(FloorModel model,Room room) async{
@@ -240,6 +247,7 @@ class _FloorListPageState extends HermesState<FloorListPage> {
             body: GestureDetector(
                 onTap: () {
                   FocusScope.of(context).requestFocus(blankNode); //关键盘
+                  // Slidable.of(context)?.close();
                 },
                 child: _floorBuilder(model)),
           );

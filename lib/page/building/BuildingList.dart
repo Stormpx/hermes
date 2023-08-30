@@ -27,6 +27,7 @@ class BuildingListPage extends StatefulWidget {
 class _BuildingListState extends HermesState<BuildingListPage> {
   final FocusNode blankNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _slidableGroup = GlobalKey();
   OverlayEntry? overlayEntry;
   bool start = false;
 
@@ -58,6 +59,7 @@ class _BuildingListState extends HermesState<BuildingListPage> {
                         title: Text("建筑列表"),
                       ),
                       drawer: ExtOptionDrawer(),
+                      drawerEdgeDragWidth: MediaQuery.of(context).size.width/2,
                       onDrawerChanged: (open) {
                         if (!open) {
                           model.reload();
@@ -70,8 +72,7 @@ class _BuildingListState extends HermesState<BuildingListPage> {
                       ),
                       body: GestureDetector(
                           onTap: () {
-                            FocusScope.of(context)
-                                .requestFocus(blankNode); //关键盘
+                            FocusScope.of(context).requestFocus(blankNode); //关键盘
                           },
                           child: buildingList(model!)),
                     );
@@ -93,61 +94,64 @@ class _BuildingListState extends HermesState<BuildingListPage> {
         });
       }
     }
-    return ReorderableListView.builder(
-      scrollDirection: Axis.vertical,
-      scrollController: _scrollController,
-      buildDefaultDragHandles: false,
-      itemBuilder: (context, index) {
-        var building = list[index];
-        var key = ObjectKey(building);
-        return Slidable(
-          key: key,
-          endActionPane: ActionPane(
-            motion: ScrollMotion(),
-            children: [
-              SlidableAction(
-                  label: '编辑',
-                  backgroundColor: Colors.green,
-                  icon: Icons.edit,
-                  onPressed: (BuildContext ctx) async {
-                    _updateBuilding(model, building);
-                  }),
-              SlidableAction(
-                  label: '删除',
-                  backgroundColor: Colors.red,
-                  icon: Icons.delete,
-                  onPressed: (BuildContext context) async {
-                    var confirm = await showDeleteConfirmDialog([
-                      Text("您确定要删除建筑 ${building.name} 吗?"),
-                      Text("删除也会将套间一并删除")
-                    ]);
-                    if (confirm ?? false) {
-                      model.delBuilding(building);
-                    }
-                  })
-            ],
-          ),
-          child: ListTile(
-            subtitle: Text("placeholder"),
-            trailing: ReorderableDragStartListener(
-              index: index,
-              child: Icon(Icons.list),
-            ),
-            title: Text(
-              building.name,
-              softWrap: false,
-              overflow: TextOverflow.fade,
-              style: TextStyle(fontSize: 18.0),
-            ),
-            onTap: () => _enterBuilding(context, building),
-          ),
-        );
-      },
-      itemCount: list.length,
-      onReorder: (oldIndex, newIndex) {
-        model.buildingReorder(oldIndex, newIndex);
-      },
-      physics: ClampingScrollPhysics(),
+    return SlidableAutoCloseBehavior(
+        child: ReorderableListView.builder(
+          scrollDirection: Axis.vertical,
+          scrollController: _scrollController,
+          buildDefaultDragHandles: false,
+          itemBuilder: (context, index) {
+            var building = list[index];
+            var key = ObjectKey(building);
+            return Slidable(
+              key: key,
+              groupTag: _slidableGroup,
+              endActionPane: ActionPane(
+                motion: ScrollMotion(),
+                children: [
+                  SlidableAction(
+                      label: '编辑',
+                      backgroundColor: Colors.green,
+                      icon: Icons.edit,
+                      onPressed: (BuildContext ctx) async {
+                        _updateBuilding(model, building);
+                      }),
+                  SlidableAction(
+                      label: '删除',
+                      backgroundColor: Colors.red,
+                      icon: Icons.delete,
+                      onPressed: (BuildContext context) async {
+                        var confirm = await showDeleteConfirmDialog([
+                          Text("您确定要删除建筑 ${building.name} 吗?"),
+                          Text("删除也会将套间一并删除")
+                        ]);
+                        if (confirm ?? false) {
+                          model.delBuilding(building);
+                        }
+                      })
+                ],
+              ),
+              child: ListTile(
+                subtitle: Text("placeholder"),
+                trailing: ReorderableDragStartListener(
+                  index: index,
+                  child: Icon(Icons.list),
+                ),
+                title: Text(
+                  building.name,
+                  softWrap: false,
+                  overflow: TextOverflow.fade,
+                  style: TextStyle(fontSize: 18.0),
+                ),
+                onTap: () => _enterBuilding(context, building),
+              ),
+            );
+          },
+          itemCount: list.length,
+          onReorder: (oldIndex, newIndex) {
+            model.buildingReorder(oldIndex, newIndex);
+          },
+          physics: ClampingScrollPhysics(),
+        )
     );
   }
 

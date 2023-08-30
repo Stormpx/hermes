@@ -1,6 +1,6 @@
 import 'dart:ffi';
 import 'dart:io';
-
+import 'dart:math';
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_printer/flutter_printer.dart';
@@ -387,6 +387,35 @@ class RoomSnapshotModel extends ChangeNotifier {
   RoomSnapshotModel(this.id) {
     _init();
   }
+
+  double get minimumTotal => records.isEmpty
+      ? 0
+      : records
+          .map((e) => e.snapshot.totalAmount)
+          .map((e) => e ?? 0)
+          .reduce(min)
+          .roundToDouble();
+
+  double get maximumTotal =>records.isEmpty
+      ? 0
+      : records
+      .map((e) => e.snapshot.totalAmount)
+      .map((e) => e ?? 0)
+      .reduce(max)
+      .roundToDouble();
+
+  DateTime get minimumTime =>  records.isEmpty
+      ? DateTime.utc(1999)
+      : records
+      .map((e) => e.snapshot.snapshotStartDate)
+      .reduce((a,b)=>a.compareTo(b)>0?b:a);
+
+  DateTime get maximumTime =>  records.isEmpty
+      ? DateTime.utc(1999)
+      : records
+      .map((e) => e.snapshot.snapshotStartDate)
+      .reduce((a,b)=>a.compareTo(b)>0?a:b);
+
 
   Future<void> _init() async {
     records = await Repo.roomRepository.findSnapshotByRoomId(id);

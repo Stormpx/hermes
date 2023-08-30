@@ -16,6 +16,7 @@ import 'package:hermes/page/room/Model.dart';
 import 'package:hermes/page/room/RoomDayMarkerForm.dart';
 import 'package:hermes/page/room/RoomFeeForm.dart';
 import 'package:hermes/page/room/RoomSanpshotsList.dart';
+import 'package:hermes/page/room/RoomSnapshotChart.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -33,7 +34,6 @@ class RoomDetailState extends HermesState<RoomDetail> {
   double _fontSize = 15;
 
   void _captureContent(RoomModel model) async {
-
     var status = await Permission.storage.request();
     if (!status.isGranted) {
       return null;
@@ -52,13 +52,29 @@ class RoomDetailState extends HermesState<RoomDetail> {
       context,
       MaterialPageRoute(
         builder: (c) => ChangeNotifierProvider(
-          create: (create) => RoomSnapshotModel(model.id),
-          child: Scaffold(
-              appBar: AppBar(
-                title: Text("${model.title ?? ""} 记录"),
+            create: (create) => RoomSnapshotModel(model.id),
+            child: DefaultTabController(
+              length: 2,
+              child: Scaffold(
+                  appBar: AppBar(
+                    title: Text("${model.title ?? ""} 记录"),
+                    bottom: TabBar(tabs: [
+                      Tab(
+                        text: "列表",
+                      ),
+                      Tab(
+                        text: "折线图",
+                      ),
+                    ]),
+                  ),
+                body: TabBarView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                  RoomSnapshotList(),
+                  RoomSnapshotChart()
+                ]),
               ),
-              body: RoomSnapshotList()),
-        ),
+            )),
       ),
     );
   }
@@ -80,7 +96,8 @@ class RoomDetailState extends HermesState<RoomDetail> {
 
   @override
   Widget build(BuildContext context) {
-    var param = (ModalRoute.of(context)!.settings.arguments as Map<dynamic, dynamic>);
+    var param =
+        (ModalRoute.of(context)!.settings.arguments as Map<dynamic, dynamic>);
     Printer.printMapJsonLog(param);
     var id = param["roomId"] as int;
     var name = param["name"] as String?;
@@ -96,7 +113,7 @@ class RoomDetailState extends HermesState<RoomDetail> {
       child: Consumer<RoomModel?>(
         builder: (ctx, value, child) {
           return InitializingPage(
-              title: Text(name??"加载中"),
+              title: Text(name ?? "加载中"),
               initialized: value != null,
               loadingText: Text("获取数据中..."),
               builder: () {

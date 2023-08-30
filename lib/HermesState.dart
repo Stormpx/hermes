@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:toast/toast.dart';
 
 abstract class HermesState<T extends StatefulWidget> extends State<T>{
@@ -8,6 +9,38 @@ abstract class HermesState<T extends StatefulWidget> extends State<T>{
   void initState() {
     super.initState();
     ToastContext().init(context);
+  }
+
+  showLoaderDialog(BuildContext context){
+    AlertDialog alert=AlertDialog(
+      content: new Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(),
+          Container(margin: EdgeInsets.only(left: 7),child:Text("Loading..." )),
+        ],),
+    );
+    showDialog(barrierDismissible: false,
+      context:context,
+      builder:(BuildContext context){
+        return Container(
+          alignment: Alignment.center,
+          child: Container(
+            height: 100,
+            width: 100,
+            decoration: BoxDecoration(
+                color: Colors.white30,
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+            child: SizedBox(
+              width: 50,
+              height: 50,
+              child: Center(child: CircularProgressIndicator(),)
+            )
+          ),
+        );
+      },
+    );
   }
 
   Future<bool?> showDeleteConfirmDialog(List<Widget> children) {

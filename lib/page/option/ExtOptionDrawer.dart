@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_printer/flutter_printer.dart';
 import 'package:hermes/HermesState.dart';
+import 'package:hermes/page/Rebuild.dart';
 import 'package:hermes/page/import/Import.dart';
 import 'package:hermes/page/import/ImportModel.dart';
 import 'package:hermes/page/option/Model.dart';
@@ -67,6 +69,26 @@ class ExtOptionDrawerState extends HermesState<ExtOptionDrawer> {
                       await model.clearData();
                     }
                     Navigator.pop(ctx,"clear");
+                  },
+                ),
+                ListTile(
+                  title:
+                  Text('加载旧数据', style: TextStyle(color: Colors.black,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 17)),
+                  //CircleAvatar 一般用于设置圆形头像
+                  leading: Icon(Icons.sim_card_download_outlined, color: Colors.black,),
+                  onTap: () async {
+                    showLoaderDialog(context);
+                    try {
+                      await Rebuild(SharedPreferencesKv()).start();
+                    } catch (e) {
+                      Printer.error(e);
+                    } finally {
+                      Navigator.pop(context);
+                      Navigator.pop(context);
+                    }
+
                   },
                 ),
               ],
