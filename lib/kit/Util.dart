@@ -32,4 +32,7 @@ class Util{
     return date.subtract(const Duration(seconds: 1));
   }
 
+  static double round2(double val,int fractionDigits){
+    return double.parse(val.toStringAsFixed(fractionDigits));
+  }
 }

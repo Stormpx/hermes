@@ -30,7 +30,7 @@ class MarkerBlock extends ChangeNotifier {
       return 0;
     }
     var r= exp.ExpressionEvaluator().eval(expr, {});
-    return r is int ? r.toDouble():r is double? r:0;
+    return r is int ? r.toDouble():r is double? Util.round2(r, 2):0;
   }
 
   double get elect => evalValue(electController.text);
@@ -402,19 +402,17 @@ class RoomSnapshotModel extends ChangeNotifier {
 
   double get minimumTotal => records.isEmpty
       ? 0
-      : records
-          .map((e) => e.snapshot.totalAmount)
-          .map((e) => e ?? 0)
-          .reduce(min)
-          .roundToDouble();
+      : Util.round2(records
+      .map((e) => e.snapshot.totalAmount)
+      .map((e) => e ?? 0)
+      .reduce(min), 2);
 
   double get maximumTotal =>records.isEmpty
       ? 0
-      : records
+      : Util.round2(records
       .map((e) => e.snapshot.totalAmount)
       .map((e) => e ?? 0)
-      .reduce(max)
-      .roundToDouble();
+      .reduce(max), 2);
 
   DateTime get minimumTime =>  records.isEmpty
       ? DateTime.utc(1999)

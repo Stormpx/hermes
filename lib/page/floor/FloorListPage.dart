@@ -92,8 +92,9 @@ class _FloorListPageState extends HermesState<FloorListPage> {
             ),
             child: ExpansionTile(
               subtitle: Text("现有${floorWithRooms.rooms.length}个套间"),
+
               trailing: FractionallySizedBox(
-                widthFactor: 0.2,
+                widthFactor: 0.21,
                 child: Row(
                   children: [
                     IconButton(
@@ -262,116 +263,123 @@ class _FloorListPageState extends HermesState<FloorListPage> {
   Widget _floorForm(
       {Map<String, dynamic>? initValue,
       required void Function(Map<String, dynamic>) onSubmit}) {
-    return Container(
-//      height: MediaQuery.of(context).size.height,
-      alignment: Alignment.center,
-      // padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: CardColumnWidget(
-          child: FormBuilder(
-              key: _formKey,
-              initialValue: initValue ?? {},
-              child: Container(
-                height: 250,
-                color: Colors.white,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    Container(
-                      alignment: Alignment.topCenter,
-                      padding: EdgeInsets.only(top: 20),
-                      child: Text(
-                        "输入楼层名称",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18.0,
-                          height: 1.0,
-                          // letterSpacing: 1.0
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.only(left: 20.0, right: 20.0),
-                      child: FormBuilderTextField(
-                        key: _nameFieldKey,
-                        name: "name",
-                        validator: FormBuilderValidators.compose([
-                          FormBuilderValidators.required(errorText: "名称必填"),
-                        ]),
-                        autofocus: true,
-                        maxLines: 1,
-                        decoration: InputDecoration(
-                          labelText: "楼层名称",
-                          enabledBorder: OutlineInputBorder(
-                              borderSide:
-                                  BorderSide(color: Colors.blue, width: 2.0)),
-                          focusedBorder: OutlineInputBorder(
-                              borderSide:
-                                  BorderSide(color: Colors.blue, width: 2.0)),
-                          errorBorder: OutlineInputBorder(
-                              borderSide:
-                                  BorderSide(color: Colors.red, width: 2.0)),
-                        ),
-                      ),
-                    ),
-                    // SizedBox(height: 20),
-                    Container(
-                      alignment: Alignment.bottomCenter,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+    return Dialog(
+      insetPadding: EdgeInsets.all(10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            alignment: Alignment.center,
+            child: CardColumnWidget(
+                child: FormBuilder(
+                    key: _formKey,
+                    initialValue: initValue ?? {},
+                    child: Container(
+                      height: 250,
+                      color: Colors.white,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: <Widget>[
                           Container(
-                            width: 150,
-                            height: 40,
-                            child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey.shade400,
-                                ),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text(
-                                  "取消",
-                                  style: TextStyle(
-                                    fontSize: 17.0,
-                                    height: 1.0,
-                                  ),
-                                )),
+                            alignment: Alignment.topCenter,
+                            padding: EdgeInsets.only(top: 20),
+                            child: Text(
+                              "输入楼层名称",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18.0,
+                                height: 1.0,
+                                // letterSpacing: 1.0
+                              ),
+                            ),
                           ),
-                          SizedBox(width: 20),
                           Container(
-                            width: 150,
-                            height: 40,
-                            child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(),
-                                onPressed: () async {
-                                  // Validate and save the form values
-                                  var validate =
-                                      _formKey.currentState?.saveAndValidate();
-                                  debugPrint(
-                                      _formKey.currentState?.value.toString());
-                                  if (!(validate ?? false)) {
-                                    return;
-                                  }
-                                  var val = _formKey.currentState?.value;
-                                  if (val == null) {
-                                    return;
-                                  }
-                                  onSubmit(val);
-                                },
-                                child: Text(
-                                  "确定",
-                                  style: TextStyle(
-                                    fontSize: 17.0,
-                                    height: 1.0,
-                                  ),
-                                )),
+                            padding: EdgeInsets.only(left: 20.0, right: 20.0),
+                            child: FormBuilderTextField(
+                              key: _nameFieldKey,
+                              name: "name",
+                              validator: FormBuilderValidators.compose([
+                                FormBuilderValidators.required(errorText: "名称必填"),
+                              ]),
+                              autofocus: true,
+                              maxLines: 1,
+                              decoration: InputDecoration(
+                                labelText: "楼层名称",
+                                enabledBorder: OutlineInputBorder(
+                                    borderSide:
+                                    BorderSide(color: Colors.blue, width: 2.0)),
+                                focusedBorder: OutlineInputBorder(
+                                    borderSide:
+                                    BorderSide(color: Colors.blue, width: 2.0)),
+                                errorBorder: OutlineInputBorder(
+                                    borderSide:
+                                    BorderSide(color: Colors.red, width: 2.0)),
+                              ),
+                            ),
+                          ),
+                          // SizedBox(height: 20),
+                          Container(
+                            alignment: Alignment.bottomCenter,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 150,
+                                  height: 40,
+                                  child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.grey.shade400,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text(
+                                        "取消",
+                                        style: TextStyle(
+                                          fontSize: 17.0,
+                                          height: 1.0,
+                                        ),
+                                      )),
+                                ),
+                                SizedBox(width: 20),
+                                Container(
+                                  width: 150,
+                                  height: 40,
+                                  child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(),
+                                      onPressed: () async {
+                                        // Validate and save the form values
+                                        var validate =
+                                        _formKey.currentState?.saveAndValidate();
+                                        debugPrint(
+                                            _formKey.currentState?.value.toString());
+                                        if (!(validate ?? false)) {
+                                          return;
+                                        }
+                                        var val = _formKey.currentState?.value;
+                                        if (val == null) {
+                                          return;
+                                        }
+                                        onSubmit(val);
+                                      },
+                                      child: Text(
+                                        "确定",
+                                        style: TextStyle(
+                                          fontSize: 17.0,
+                                          height: 1.0,
+                                        ),
+                                      )),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ))),
+                    ))),
+          )
+        ],
+      ),
     );
   }
 
@@ -379,116 +387,121 @@ class _FloorListPageState extends HermesState<FloorListPage> {
       {String? title,
       Map<String, dynamic>? initValue,
       required void Function(Map<String, dynamic>) onSubmit}) {
-    return Container(
-//      height: MediaQuery.of(context).size.height,
-      alignment: Alignment.center,
-      // padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: CardColumnWidget(
-          child: FormBuilder(
-              key: _formKey,
-              initialValue: initValue ?? {},
-              child: Container(
-                height: 250,
-                color: Colors.white,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    Container(
-                      alignment: Alignment.topCenter,
-                      padding: EdgeInsets.only(top: 20),
-                      child: Text(
-                        title ?? "输入套间名称",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18.0,
-                          height: 1.0,
-                          // letterSpacing: 1.0
+    return Dialog(
+      insetPadding: EdgeInsets.all(10),
+      child:Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [Container(
+          alignment: Alignment.center,
+          child: CardColumnWidget(
+              child: FormBuilder(
+                  key: _formKey,
+                  initialValue: initValue ?? {},
+                  child: Container(
+                    height: 250,
+                    color: Colors.white,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: <Widget>[
+                        Container(
+                          alignment: Alignment.topCenter,
+                          padding: EdgeInsets.only(top: 20),
+                          child: Text(
+                            title ?? "输入套间名称",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18.0,
+                              height: 1.0,
+                              // letterSpacing: 1.0
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.only(left: 20.0, right: 20.0),
-                      child: FormBuilderTextField(
-                        key: _nameFieldKey,
-                        name: "name",
-                        validator: FormBuilderValidators.compose([
-                          FormBuilderValidators.required(errorText: "名称必填"),
-                        ]),
-                        autofocus: true,
-                        maxLines: 1,
-                        decoration: InputDecoration(
-                          labelText: "套间名称",
-                          enabledBorder: OutlineInputBorder(
-                              borderSide:
+                        Container(
+                          padding: EdgeInsets.only(left: 20.0, right: 20.0),
+                          child: FormBuilderTextField(
+                            key: _nameFieldKey,
+                            name: "name",
+                            validator: FormBuilderValidators.compose([
+                              FormBuilderValidators.required(errorText: "名称必填"),
+                            ]),
+                            autofocus: true,
+                            maxLines: 1,
+                            decoration: InputDecoration(
+                              labelText: "套间名称",
+                              enabledBorder: OutlineInputBorder(
+                                  borderSide:
                                   BorderSide(color: Colors.blue, width: 2.0)),
-                          focusedBorder: OutlineInputBorder(
-                              borderSide:
+                              focusedBorder: OutlineInputBorder(
+                                  borderSide:
                                   BorderSide(color: Colors.blue, width: 2.0)),
-                          errorBorder: OutlineInputBorder(
-                              borderSide:
+                              errorBorder: OutlineInputBorder(
+                                  borderSide:
                                   BorderSide(color: Colors.red, width: 2.0)),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    // SizedBox(height: 20),
-                    Container(
-                      alignment: Alignment.bottomCenter,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 150,
-                            height: 40,
-                            child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey.shade400,
-                                ),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text(
-                                  "取消",
-                                  style: TextStyle(
-                                    fontSize: 17.0,
-                                    height: 1.0,
-                                  ),
-                                )),
-                          ),
-                          SizedBox(width: 20),
-                          Container(
-                            width: 150,
-                            height: 40,
-                            child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(),
-                                onPressed: () async {
-                                  // Validate and save the form values
-                                  var validate =
+                        // SizedBox(height: 20),
+                        Container(
+                          alignment: Alignment.bottomCenter,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 150,
+                                height: 40,
+                                child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.grey.shade400,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text(
+                                      "取消",
+                                      style: TextStyle(
+                                        fontSize: 17.0,
+                                        height: 1.0,
+                                      ),
+                                    )),
+                              ),
+                              SizedBox(width: 20),
+                              Container(
+                                width: 150,
+                                height: 40,
+                                child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(),
+                                    onPressed: () async {
+                                      // Validate and save the form values
+                                      var validate =
                                       _formKey.currentState?.saveAndValidate();
-                                  debugPrint(
-                                      _formKey.currentState?.value.toString());
-                                  if (!(validate ?? false)) {
-                                    return;
-                                  }
-                                  var val = _formKey.currentState?.value;
-                                  if (val == null) {
-                                    return;
-                                  }
-                                  onSubmit(val);
-                                },
-                                child: Text(
-                                  "确定",
-                                  style: TextStyle(
-                                    fontSize: 17.0,
-                                    height: 1.0,
-                                  ),
-                                )),
+                                      debugPrint(
+                                          _formKey.currentState?.value.toString());
+                                      if (!(validate ?? false)) {
+                                        return;
+                                      }
+                                      var val = _formKey.currentState?.value;
+                                      if (val == null) {
+                                        return;
+                                      }
+                                      onSubmit(val);
+                                    },
+                                    child: Text(
+                                      "确定",
+                                      style: TextStyle(
+                                        fontSize: 17.0,
+                                        height: 1.0,
+                                      ),
+                                    )),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ))),
+                  ))),
+        )],
+      ),
     );
   }
 }
