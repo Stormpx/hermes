@@ -21,7 +21,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:toast/toast.dart';
 import 'package:uuid/uuid.dart';
-import 'package:uuid/uuid_util.dart';
 
 class RoomModel extends ChangeNotifier{
   static final String DATE_KEY=":date:";
@@ -351,8 +350,8 @@ class RoomModel extends ChangeNotifier{
       await dir.create(recursive: true);
     var file=File("${dir.path}${Uuid().v4()}.png");
     await file.writeAsBytes(pngBytes);
-    Share.shareFiles(
-      [file.path],
+    Share.shareXFiles(
+      [XFile(file.path)],
       text: "截图"
     );
   }

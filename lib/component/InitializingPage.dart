@@ -1,4 +1,3 @@
-import 'package:flukit/flukit.dart';
 import 'package:flutter/material.dart';
 
 
@@ -33,18 +32,18 @@ class InitializingPage extends StatelessWidget {
               alignment: Alignment.center,
               children: <Widget>[
                 loadingText??Text("加载中"),
-                AnimatedRotationBox(
-                  child: GradientCircularProgressIndicator(
-                    radius: 100.0,
-                    colors: [
-                      Colors.redAccent,
-                      Colors.lightBlue,
-                      Colors.greenAccent
-                    ],
-                    value: .8,
-                    backgroundColor: Colors.transparent,
-                  ),
-                ),
+                // AnimatedRotationBox(
+                //   child: GradientCircularProgressIndicator(
+                //     radius: 100.0,
+                //     colors: [
+                //       Colors.redAccent,
+                //       Colors.lightBlue,
+                //       Colors.greenAccent
+                //     ],
+                //     value: .8,
+                //     backgroundColor: Colors.transparent,
+                //   ),
+                // ),
               ],
             ))
       );
