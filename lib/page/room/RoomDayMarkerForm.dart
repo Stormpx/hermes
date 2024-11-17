@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_printer/flutter_printer.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:hermes/kit/ExprValidator.dart';
 import 'package:hermes/kit/Util.dart';
 import 'package:hermes/page/room/Model.dart';
 import 'package:provider/provider.dart';
@@ -82,7 +83,7 @@ class RoomDayMarkerState extends State<RoomDayMarker> {
                   _saveTemp(block);
                   FocusScope.of(context).unfocus();
                   var now = DateTime.now();
-                  if(dayTapTime==null||now.difference(dayTapTime!)>=Duration(milliseconds: 500)){
+                  if(dayTapTime==null||now.difference(dayTapTime!)>=Duration(milliseconds: 200)){
                     dayTapTime=now;
                   }else{
                     dayTapTime=null;
@@ -173,12 +174,12 @@ class RoomDayMarkerState extends State<RoomDayMarker> {
       ),
       icon: Icon(Icons.edit),
       style: ButtonStyle(
-          shape: MaterialStateProperty.all(RoundedRectangleBorder(
+          shape: WidgetStateProperty.all(RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18.67))),
-          side: MaterialStateProperty.all(BorderSide(
+          side: WidgetStateProperty.all(BorderSide(
             color: Colors.grey.shade300,
           )),
-          backgroundColor: MaterialStateProperty.all(Colors.grey.shade300)),
+          backgroundColor: WidgetStateProperty.all(Colors.grey.shade300)),
     ));
   }
 
@@ -221,9 +222,9 @@ class RoomDayMarkerState extends State<RoomDayMarker> {
           ),
           icon: Icon(Icons.cancel, color: Colors.white),
           style: ButtonStyle(
-              shape: MaterialStateProperty.all(RoundedRectangleBorder(
+              shape: WidgetStateProperty.all(RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18.67))),
-              backgroundColor: MaterialStateProperty.all(Colors.red)),
+              backgroundColor: WidgetStateProperty.all(Colors.red)),
         )),
         ButtonTheme(
             // height: 50,
@@ -240,9 +241,9 @@ class RoomDayMarkerState extends State<RoomDayMarker> {
             color: Colors.white,
           ),
           style: ButtonStyle(
-              shape: MaterialStateProperty.all(RoundedRectangleBorder(
+              shape: WidgetStateProperty.all(RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18.67))),
-              backgroundColor: MaterialStateProperty.all(Colors.green)),
+              backgroundColor: WidgetStateProperty.all(Colors.green)),
         )),
       ],
     );
@@ -265,11 +266,11 @@ class RoomDayMarkerState extends State<RoomDayMarker> {
                 maxLines: 1,
                 keyboardType: TextInputType.number,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\.0-9\-]'))
+                  FilteringTextInputFormatter.allow(RegExp(r'[\.0-9\-+]'))
                 ],
                 validator: FormBuilderValidators.compose([
                   FormBuilderValidators.required(),
-                  FormBuilderValidators.numeric(errorText: "必须是有效的数值")
+                  ExprValidator(errorText: "必须是有效的表达式").validate,
                 ]),
                 style: TextStyle(color: Colors.black),
                 enabled: _edit,
@@ -299,11 +300,11 @@ class RoomDayMarkerState extends State<RoomDayMarker> {
                 maxLines: 1,
                 keyboardType: TextInputType.number,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\.0-9\-]'))
+                  FilteringTextInputFormatter.allow(RegExp(r'[\.0-9\-+]'))
                 ],
                 validator: FormBuilderValidators.compose([
                   FormBuilderValidators.required(),
-                  FormBuilderValidators.numeric(errorText: "必须是有效的数值")
+                  ExprValidator(errorText: "必须是有效的表达式").validate,
                 ]),
                 style: TextStyle(color: Colors.black),
                 enabled: _edit,

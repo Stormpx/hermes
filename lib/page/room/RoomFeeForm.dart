@@ -219,7 +219,7 @@ class RoomFeeForm extends StatelessWidget {
                         const SizedBox(height: 10),
                         _optFeeBlock(ctx, model),
                         MaterialButton(
-                          color: Theme.of(context).colorScheme.secondary,
+                          color: Colors.blueAccent,
                           onPressed: () async {
                             // Validate and save the form values
                             var validate =

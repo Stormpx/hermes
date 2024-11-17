@@ -11,6 +11,7 @@ import 'package:hermes/model/Database.dart';
 import 'package:hermes/model/Repository.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
+import 'package:expressions/expressions.dart' as exp;
 
 class MarkerBlock extends ChangeNotifier {
   final RegExp regex = RegExp(r'([.]*0)(?!.*\d)');
@@ -23,9 +24,18 @@ class MarkerBlock extends ChangeNotifier {
   DateTime focusedDay = Util.normalizeDate(DateTime.now());
   DateTime selectedDay = Util.normalizeDate(DateTime.now());
 
-  double get elect => double.tryParse(electController.text) ?? 0;
+  double evalValue(String text){
+    var expr = exp.Expression.tryParse(text);
+    if(expr==null){
+      return 0;
+    }
+    var r= exp.ExpressionEvaluator().eval(expr, {});
+    return r is int ? r.toDouble():r is double? r:0;
+  }
 
-  double get water => double.tryParse(waterController.text) ?? 0;
+  double get elect => evalValue(electController.text);
+
+  double get water => evalValue(waterController.text);
 
   void set days(DateTime date) {
     this.focusedDay = date;
@@ -59,6 +69,8 @@ class MarkerBlock extends ChangeNotifier {
 
   Future<void> submit() async {
     await roomModel?.saveRoomDay(this);
+    this.elect = this.elect;
+    this.water = this.water;
   }
 
   @override

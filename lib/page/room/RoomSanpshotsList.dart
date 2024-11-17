@@ -30,7 +30,7 @@ class _RoomSnapshotListState extends HermesState<RoomSnapshotList> {
     return ExpansionPanelList(
         expansionCallback: (index, bool) {
           _currentIndex = index;
-          if (bool) _currentIndex = -1;
+          if (!bool) _currentIndex = -1;
           model.notifyListeners();
         },
         children: _buildExpansionPanel(model));
