@@ -319,6 +319,7 @@ class Rebuild{
             await Repo.roomRepository.saveDay(RoomDay(
                 roomId: room.id!,
                 date: Util.normalizeDate(legacyRoomDay.date),
+                seq: 1,
                 elect: legacyRoomDay.elect.toDouble(),
                 water: legacyRoomDay.water.toDouble()));
           }

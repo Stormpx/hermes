@@ -13,48 +13,111 @@ import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'package:expressions/expressions.dart' as exp;
 
-class MarkerBlock extends ChangeNotifier {
-  final RegExp regex = RegExp(r'([.]*0)(?!.*\d)');
-  RoomModel? roomModel;
+final RegExp regex = RegExp(r'([.]*0)(?!.*\d)');
 
+double _evalValue(String text){
+  var expr = exp.Expression.tryParse(text);
+  if(expr==null){
+    return 0;
+  }
+  var r= exp.ExpressionEvaluator().eval(expr, {});
+  return r is int ? r.toDouble():r is double? Util.round2(r, 2):0;
+}
+
+class RoomMeter{
+  double elect;
+  double water;
+
+  RoomMeter(this.elect, this.water);
+
+}
+
+class RoomMeterController{
   final TextEditingController electController = TextEditingController();
   final TextEditingController waterController = TextEditingController();
+
+  double get elect => _evalValue(electController.text);
+  double get water => _evalValue(waterController.text);
+
+  set elect(double value) {
+    electController.text = value.toString().replaceAll(regex, '');
+  }
+  set water(double value) {
+    waterController.text = value.toString().replaceAll(regex, '');
+  }
+  void setValue(double elect, double water) {
+    this.elect = elect;
+    this.water = water;
+  }
+
+  @override
+  String toString() {
+    return 'RoomMeterController{elect: $elect, water: $water}';
+  }
+}
+
+
+class MarkerBlock extends ChangeNotifier {
+  RoomModel? roomModel;
 
   DateTime? lastDay;
   DateTime focusedDay = Util.normalizeDate(DateTime.now());
   DateTime selectedDay = Util.normalizeDate(DateTime.now());
 
-  double evalValue(String text){
-    var expr = exp.Expression.tryParse(text);
-    if(expr==null){
-      return 0;
+  final Map<int,RoomMeterController> roomMeters = {};
+
+  int get meters=> roomModel?.meters??1;
+
+  int get electMeters => roomModel?.electMeters??1;
+
+  int get waterMeters => roomModel?.waterMeters??1;
+
+  RoomMeterController meterController(int seq){
+    var controller = roomMeters[seq];
+    if(controller==null){
+      roomMeters[seq] = RoomMeterController();
+      controller = roomMeters[seq]!;
     }
-    var r= exp.ExpressionEvaluator().eval(expr, {});
-    return r is int ? r.toDouble():r is double? Util.round2(r, 2):0;
+    return controller;
   }
 
-  double get elect => evalValue(electController.text);
+  double elect(int seq){
+    return roomMeters[seq]?.elect??0;
+  }
 
-  double get water => evalValue(waterController.text);
+  double water(int seq){
+    return roomMeters[seq]?.water??0;
+  }
 
   void set days(DateTime date) {
     this.focusedDay = date;
     this.selectedDay = date;
   }
 
-  set elect(double value) {
-    electController.text = value.toString().replaceAll(regex, '');
-  }
-
-  set water(double value) {
-    waterController.text = value.toString().replaceAll(regex, '');
-  }
-
-  void setValue(double elect, double water) {
-    this.elect = elect;
-    this.water = water;
+  void setValueBySeq(int seq,double elect, double water) {
+    var roomMeterController = roomMeters.putIfAbsent(seq, ()=>RoomMeterController());
+    roomMeterController.elect = elect;
+    roomMeterController.water = water;
     notifyListeners();
   }
+
+  void _setBlockValue(MarkerBlock block){
+    block.roomMeters.forEach((seq,meter){
+      if(roomMeters[seq]==null) {
+        roomMeters[seq] = RoomMeterController();
+      }
+      roomMeters[seq]!.elect = meter.elect;
+      roomMeters[seq]!.water = meter.water;
+    });
+  }
+
+  void setBlockValue(MarkerBlock block){
+    if(this==block){
+      return;
+    }
+    _setBlockValue(block);
+  }
+
 
   Future<void> loadEvents(DateTime date) async {
     focusedDay = date;
@@ -69,13 +132,12 @@ class MarkerBlock extends ChangeNotifier {
 
   Future<void> submit() async {
     await roomModel?.saveRoomDay(this);
-    this.elect = this.elect;
-    this.water = this.water;
+    _setBlockValue(this);
   }
 
   @override
   String toString() {
-    return 'MarkerBlock{selectedDay: $selectedDay, elect: $elect, water: $water}';
+    return 'MarkerBlock{selectedDay: $selectedDay}';
   }
 }
 
@@ -86,9 +148,15 @@ class RoomModel extends ChangeNotifier {
   int id;
   RoomWithOptFee? room;
 
-  Map<DateTime, RoomDay> days = {};
+  Set<DateTime> _markerDays= Set();
 
   String? get title => room?.room.name ?? null;
+
+  int get meters => max(room?.room.electMeters??1,room?.room.waterMeters??1);
+
+  int get electMeters => room?.room.electMeters??1;
+
+  int get waterMeters => room?.room.waterMeters??1;
 
   RoomModel(this.id) {
     mainBlock.roomModel = this;
@@ -122,28 +190,33 @@ class RoomModel extends ChangeNotifier {
     var days = await Repo.roomRepository.findDaysById(id, start, end);
     Printer.info(days);
     days.forEach((element) {
-      this.days[Util.normalizeDate(element.date)] = element;
+      _markerDays.add(Util.normalizeDate(element.date));
     });
   }
 
-  RoomDay? getRoomDay(DateTime date) {
-    return days[date];
+  bool isDayMarked(DateTime date){
+    return _markerDays.contains(date);
   }
 
   Future<void> loadRoomDay(MarkerBlock block) async {
-    var roomDay = (await Repo.roomRepository
-                .findDaysById(id, block.selectedDay, block.selectedDay))
-            .firstOrNull ??
-        RoomDay(roomId: id, date: block.selectedDay, elect: 0, water: 0);
-    block.setValue(roomDay.elect ?? 0, roomDay.water ?? 0);
+    var roomDays = (await Repo.roomRepository.findDaysById(id, block.selectedDay, block.selectedDay));
+    if(roomDays.isEmpty){
+      roomDays = [RoomDay(roomId: id, date: block.selectedDay,seq: 1, elect: 0, water: 0)];
+    }
+    var roomMeters = { for (var roomDay in roomDays) roomDay.seq: roomDay };
+
+    for (int seq = 1; seq <= this.meters; seq++) {
+      var meter = roomMeters[seq];
+      roomDays.forEach((roomDay)=>block.setValueBySeq(seq,meter?.elect ?? 0, meter?.water ?? 0));
+    }
 
     if (block.selectedDay.isBefore(subBlock.selectedDay)) {
       subBlock.days = block.selectedDay;
-      subBlock.setValue(block.elect, block.water);
+      subBlock.setBlockValue(block);
     }
     if (block.selectedDay.isAfter(mainBlock.selectedDay)) {
       mainBlock.days = block.selectedDay;
-      mainBlock.setValue(block.elect, block.water);
+      mainBlock.setBlockValue(block);
     }
 
     notifyListeners();
@@ -151,34 +224,33 @@ class RoomModel extends ChangeNotifier {
 
   Future<void> saveRoomDay(MarkerBlock block) async {
     var roomUpdated = await Repo.roomRepository.runOnScope(() async {
-      var roomDay = (await Repo.roomRepository
-                  .findDaysById(id, block.selectedDay, block.selectedDay))
-              .firstOrNull
-              ?.copyWith(
-                  elect: Value(block.elect), water: Value(block.water)) ??
-          RoomDay(
-              roomId: id,
-              date: Util.normalizeDate(block.selectedDay),
-              elect: block.elect,
-              water: block.water);
-      roomDay = await Repo.roomRepository.saveDay(roomDay);
+      var roomDays = (await Repo.roomRepository.findDaysById(id, block.selectedDay, block.selectedDay));
 
-      days[roomDay.date] = roomDay;
+      var roomMeters = { for (var roomDay in roomDays) roomDay.seq: roomDay };
 
-      if (block != mainBlock &&
-          Util.isSameDay(block.selectedDay, mainBlock.selectedDay)) {
-        mainBlock.setValue(block.elect, block.water);
+      for (int seq = 1; seq <= this.meters; seq++) {
+        var meter = roomMeters[seq];
+        var elect = block.roomMeters[seq]?.elect??0;
+        var water = block.roomMeters[seq]?.water??0;
+        var roomDay = meter?.copyWith(elect: Value(elect), water: Value(water)) ??
+            RoomDay(roomId: id, date: Util.normalizeDate(block.selectedDay),
+                seq: seq, elect: elect, water: water);
+        roomDay = await Repo.roomRepository.saveDay(roomDay);
+        _markerDays.add(Util.normalizeDate(roomDay.date));
       }
 
-      if (block != subBlock &&
-          Util.isSameDay(block.selectedDay, subBlock.selectedDay)) {
-        subBlock.setValue(block.elect, block.water);
+      if (block != mainBlock && Util.isSameDay(block.selectedDay, mainBlock.selectedDay)) {
+        mainBlock.setBlockValue(block);
+      }
+
+      if (block != subBlock && Util.isSameDay(block.selectedDay, subBlock.selectedDay)) {
+        subBlock.setBlockValue(block);
       }
 
       var r = room!.room;
-      if (r.leastMarkDate?.isBefore(roomDay.date) ?? true) {
+      if (r.leastMarkDate?.isBefore(block.selectedDay) ?? true) {
         r = await Repo.roomRepository
-            .save(r.copyWith(leastMarkDate: Value(roomDay.date)));
+            .save(r.copyWith(leastMarkDate: Value(block.selectedDay)));
         return true;
       } else {
         return false;
@@ -196,34 +268,48 @@ class RoomModel extends ChangeNotifier {
     double rent = room?.room.rent ?? 0;
     double electFee = room?.room.electFee ?? 0;
     double waterFee = room?.room.waterFee ?? 0;
-    double mainElect = mainBlock.elect;
-    double subElect = subBlock.elect;
 
-    double mainWater = mainBlock.water;
-    double subWater = subBlock.water;
+    int electMeters = room?.room.electMeters??1;
+    int waterMeters = room?.room.waterMeters??1;
 
-    double usedElect = mainElect - subElect;
-    double usedWater = mainWater - subWater;
+    double totalUsedElect = 0;
+    double totalUsedWater = 0;
+    double totalAmount = rent;
 
-    //电费
-    double electAmount = usedElect * electFee;
-    //水费
-    double waterAmount = usedWater * waterFee;
+    var list = [FeeItem.get("租金", null, rent),];
 
-    double totalAmount = rent + electAmount + waterAmount;
+    for(int seq=1;seq<=electMeters;seq++){
+      double mainElect = mainBlock.elect(seq);
+      double subElect = subBlock.elect(seq);
+      double usedElect = mainBlock.elect(seq) - subBlock.elect(seq);
+      //电费
+      double amount = usedElect * electFee;
+      list.add(
+          FeeItem.get(
+            "电表$seq",
+            "$mainElect - $subElect = $usedElect 度\n$usedElect * $electFee = ${amount.toStringAsFixed(2)} 元",
+              amount)
+      );
+      totalAmount+=amount;
+      totalUsedElect+=usedElect;
+    }
 
-    var list = [
-      FeeItem.get(
-          "电费",
-          "$mainElect - $subElect = $usedElect 度\n$usedElect * $electFee = ${electAmount.toStringAsFixed(2)} 元",
-          electAmount),
-      FeeItem.get(
-          "水费",
-          "$mainWater - $subWater = $usedWater 度\n$usedWater * $waterFee = ${waterAmount.toStringAsFixed(2)} 元",
-          waterAmount),
-      //租金
-      FeeItem.get("租金", null, rent),
-    ];
+    for(int seq=1;seq<=waterMeters;seq++){
+      double mainWater = mainBlock.water(seq);
+      double subWater = subBlock.water(seq);
+      double usedWater = mainWater - subWater;
+      //电费
+      double amount = usedWater * waterFee;
+      list.add(
+        FeeItem.get(
+            "水表$seq",
+            "$mainWater - $subWater = $usedWater 度\n$usedWater * $waterFee = ${amount.toStringAsFixed(2)} 元",
+            amount),
+      );
+      totalAmount+=amount;
+      totalUsedWater=usedWater;
+    }
+
 
     List<RoomOption> opts = room?.optFee ?? [];
     opts.forEach((opt) {
@@ -231,6 +317,7 @@ class RoomModel extends ChangeNotifier {
       list.add(FeeItem.get(opt.name, null, opt.fee ?? 0));
     });
     list.add(FeeItem.get("总收费", null, totalAmount));
+
     return FeeResult(
       name: title ?? "",
       mainDate: mainBlock.selectedDay,
@@ -238,8 +325,8 @@ class RoomModel extends ChangeNotifier {
       rent: rent,
       elect: electFee,
       water: waterFee,
-      usedElect: usedElect,
-      usedWater: usedWater,
+      usedElect: totalUsedElect,
+      usedWater: totalUsedWater,
       totalAmount: totalAmount,
       items: list,
     );
@@ -340,6 +427,8 @@ class RoomFeeFormModel extends ChangeNotifier {
 
   Map<String, dynamic> initFormValue() {
     Map<String, dynamic> value = {
+      'electMeters': (room.electMeters ?? 1).toString(),
+      'waterMeters': (room.waterMeters ?? 1).toString(),
       'rent': (room.rent ?? 0).toString(),
       'elect': (room.electFee ?? 0).toString(),
       'water': (room.waterFee ?? 0).toString(),
@@ -362,11 +451,13 @@ class RoomFeeFormModel extends ChangeNotifier {
 
   Future<void> submit(Map<String, dynamic> val) async {
     Printer.info(val);
+    var electMeters = int.tryParse(val['electMeters'])??0;
+    var waterMeters = int.tryParse(val['waterMeters'])??0;
     var rent = double.tryParse(val['rent'] as String) ?? 0;
     var elect = double.tryParse(val['elect'] as String) ?? 0;
     var water = double.tryParse(val['water'] as String) ?? 0;
 
-    room = room.copyWith(
+    room = room.copyWith(electMeters: Value(electMeters),waterMeters: Value(waterMeters),
         rent: Value(rent), electFee: Value(elect), waterFee: Value(water));
 
     optFees = optFees

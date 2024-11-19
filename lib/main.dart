@@ -4,14 +4,11 @@ import 'package:flutter_printer/flutter_printer.dart';
 import 'package:hermes/App.dart';
 import 'package:hermes/page/RebuildPage.dart';
 import 'package:hermes/page/building/BuildingList.dart';
-import 'package:hermes/page/floor/FloorListPage.dart';
-import 'package:hermes/page/floor/FloorModel.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:provider/provider.dart';
 import 'package:toast/toast.dart';
 
 void main() {
-  Printer.enable = false;
+  Printer.enable = true;
   assert(() {
     NativeDatabase.closeExistingInstances();
     return true;

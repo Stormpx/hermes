@@ -20,9 +20,10 @@ class $HermesTable extends Hermes with TableInfo<$HermesTable, Herme> {
   @override
   List<GeneratedColumn> get $columns => [id];
   @override
-  String get aliasedName => _alias ?? 'hermes';
+  String get aliasedName => _alias ?? actualTableName;
   @override
-  String get actualTableName => 'hermes';
+  String get actualTableName => $name;
+  static const String $name = 'hermes';
   @override
   VerificationContext validateIntegrity(Insertable<Herme> instance,
       {bool isInserting = false}) {
@@ -87,6 +88,12 @@ class Herme extends DataClass implements Insertable<Herme> {
   Herme copyWith({Value<int?> id = const Value.absent()}) => Herme(
         id: id.present ? id.value : this.id,
       );
+  Herme copyWithCompanion(HermesCompanion data) {
+    return Herme(
+      id: data.id.present ? data.id.value : this.id,
+    );
+  }
+
   @override
   String toString() {
     return (StringBuffer('Herme(')
@@ -175,9 +182,10 @@ class $BuildingsTable extends Buildings
   @override
   List<GeneratedColumn> get $columns => [id, name, sort];
   @override
-  String get aliasedName => _alias ?? 'buildings';
+  String get aliasedName => _alias ?? actualTableName;
   @override
-  String get actualTableName => 'buildings';
+  String get actualTableName => $name;
+  static const String $name = 'buildings';
   @override
   VerificationContext validateIntegrity(Insertable<Building> instance,
       {bool isInserting = false}) {
@@ -274,6 +282,14 @@ class Building extends DataClass implements Insertable<Building> {
         name: name ?? this.name,
         sort: sort.present ? sort.value : this.sort,
       );
+  Building copyWithCompanion(BuildingsCompanion data) {
+    return Building(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      sort: data.sort.present ? data.sort.value : this.sort,
+    );
+  }
+
   @override
   String toString() {
     return (StringBuffer('Building(')
@@ -394,9 +410,10 @@ class $FloorsTable extends Floors with TableInfo<$FloorsTable, Floor> {
   @override
   List<GeneratedColumn> get $columns => [id, buildingId, name, sort];
   @override
-  String get aliasedName => _alias ?? 'floors';
+  String get aliasedName => _alias ?? actualTableName;
   @override
-  String get actualTableName => 'floors';
+  String get actualTableName => $name;
+  static const String $name = 'floors';
   @override
   VerificationContext validateIntegrity(Insertable<Floor> instance,
       {bool isInserting = false}) {
@@ -511,6 +528,16 @@ class Floor extends DataClass implements Insertable<Floor> {
         name: name ?? this.name,
         sort: sort.present ? sort.value : this.sort,
       );
+  Floor copyWithCompanion(FloorsCompanion data) {
+    return Floor(
+      id: data.id.present ? data.id.value : this.id,
+      buildingId:
+          data.buildingId.present ? data.buildingId.value : this.buildingId,
+      name: data.name.present ? data.name.value : this.name,
+      sort: data.sort.present ? data.sort.value : this.sort,
+    );
+  }
+
   @override
   String toString() {
     return (StringBuffer('Floor(')
@@ -644,6 +671,22 @@ class $RoomsTable extends Rooms with TableInfo<$RoomsTable, Room> {
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: Constant(99));
+  static const VerificationMeta _electMetersMeta =
+      const VerificationMeta('electMeters');
+  @override
+  late final GeneratedColumn<int> electMeters = GeneratedColumn<int>(
+      'elect_meters', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: Constant(1));
+  static const VerificationMeta _waterMetersMeta =
+      const VerificationMeta('waterMeters');
+  @override
+  late final GeneratedColumn<int> waterMeters = GeneratedColumn<int>(
+      'water_meters', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: Constant(1));
   static const VerificationMeta _rentMeta = const VerificationMeta('rent');
   @override
   late final GeneratedColumn<double> rent = GeneratedColumn<double>(
@@ -674,12 +717,23 @@ class $RoomsTable extends Rooms with TableInfo<$RoomsTable, Room> {
       GeneratedColumn<DateTime>('least_mark_date', aliasedName, true,
           type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, floorId, name, sort, rent, electFee, waterFee, leastMarkDate];
+  List<GeneratedColumn> get $columns => [
+        id,
+        floorId,
+        name,
+        sort,
+        electMeters,
+        waterMeters,
+        rent,
+        electFee,
+        waterFee,
+        leastMarkDate
+      ];
   @override
-  String get aliasedName => _alias ?? 'rooms';
+  String get aliasedName => _alias ?? actualTableName;
   @override
-  String get actualTableName => 'rooms';
+  String get actualTableName => $name;
+  static const String $name = 'rooms';
   @override
   VerificationContext validateIntegrity(Insertable<Room> instance,
       {bool isInserting = false}) {
@@ -703,6 +757,18 @@ class $RoomsTable extends Rooms with TableInfo<$RoomsTable, Room> {
     if (data.containsKey('sort')) {
       context.handle(
           _sortMeta, sort.isAcceptableOrUnknown(data['sort']!, _sortMeta));
+    }
+    if (data.containsKey('elect_meters')) {
+      context.handle(
+          _electMetersMeta,
+          electMeters.isAcceptableOrUnknown(
+              data['elect_meters']!, _electMetersMeta));
+    }
+    if (data.containsKey('water_meters')) {
+      context.handle(
+          _waterMetersMeta,
+          waterMeters.isAcceptableOrUnknown(
+              data['water_meters']!, _waterMetersMeta));
     }
     if (data.containsKey('rent')) {
       context.handle(
@@ -739,6 +805,10 @@ class $RoomsTable extends Rooms with TableInfo<$RoomsTable, Room> {
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       sort: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}sort']),
+      electMeters: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}elect_meters']),
+      waterMeters: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}water_meters']),
       rent: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}rent']),
       electFee: attachedDatabase.typeMapping
@@ -761,6 +831,8 @@ class Room extends DataClass implements Insertable<Room> {
   final int floorId;
   final String name;
   final int? sort;
+  final int? electMeters;
+  final int? waterMeters;
   final double? rent;
   final double? electFee;
   final double? waterFee;
@@ -770,6 +842,8 @@ class Room extends DataClass implements Insertable<Room> {
       required this.floorId,
       required this.name,
       this.sort,
+      this.electMeters,
+      this.waterMeters,
       this.rent,
       this.electFee,
       this.waterFee,
@@ -784,6 +858,12 @@ class Room extends DataClass implements Insertable<Room> {
     map['name'] = Variable<String>(name);
     if (!nullToAbsent || sort != null) {
       map['sort'] = Variable<int>(sort);
+    }
+    if (!nullToAbsent || electMeters != null) {
+      map['elect_meters'] = Variable<int>(electMeters);
+    }
+    if (!nullToAbsent || waterMeters != null) {
+      map['water_meters'] = Variable<int>(waterMeters);
     }
     if (!nullToAbsent || rent != null) {
       map['rent'] = Variable<double>(rent);
@@ -806,6 +886,12 @@ class Room extends DataClass implements Insertable<Room> {
       floorId: Value(floorId),
       name: Value(name),
       sort: sort == null && nullToAbsent ? const Value.absent() : Value(sort),
+      electMeters: electMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(electMeters),
+      waterMeters: waterMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(waterMeters),
       rent: rent == null && nullToAbsent ? const Value.absent() : Value(rent),
       electFee: electFee == null && nullToAbsent
           ? const Value.absent()
@@ -827,6 +913,8 @@ class Room extends DataClass implements Insertable<Room> {
       floorId: serializer.fromJson<int>(json['floorId']),
       name: serializer.fromJson<String>(json['name']),
       sort: serializer.fromJson<int?>(json['sort']),
+      electMeters: serializer.fromJson<int?>(json['electMeters']),
+      waterMeters: serializer.fromJson<int?>(json['waterMeters']),
       rent: serializer.fromJson<double?>(json['rent']),
       electFee: serializer.fromJson<double?>(json['electFee']),
       waterFee: serializer.fromJson<double?>(json['waterFee']),
@@ -841,6 +929,8 @@ class Room extends DataClass implements Insertable<Room> {
       'floorId': serializer.toJson<int>(floorId),
       'name': serializer.toJson<String>(name),
       'sort': serializer.toJson<int?>(sort),
+      'electMeters': serializer.toJson<int?>(electMeters),
+      'waterMeters': serializer.toJson<int?>(waterMeters),
       'rent': serializer.toJson<double?>(rent),
       'electFee': serializer.toJson<double?>(electFee),
       'waterFee': serializer.toJson<double?>(waterFee),
@@ -853,6 +943,8 @@ class Room extends DataClass implements Insertable<Room> {
           int? floorId,
           String? name,
           Value<int?> sort = const Value.absent(),
+          Value<int?> electMeters = const Value.absent(),
+          Value<int?> waterMeters = const Value.absent(),
           Value<double?> rent = const Value.absent(),
           Value<double?> electFee = const Value.absent(),
           Value<double?> waterFee = const Value.absent(),
@@ -862,12 +954,33 @@ class Room extends DataClass implements Insertable<Room> {
         floorId: floorId ?? this.floorId,
         name: name ?? this.name,
         sort: sort.present ? sort.value : this.sort,
+        electMeters: electMeters.present ? electMeters.value : this.electMeters,
+        waterMeters: waterMeters.present ? waterMeters.value : this.waterMeters,
         rent: rent.present ? rent.value : this.rent,
         electFee: electFee.present ? electFee.value : this.electFee,
         waterFee: waterFee.present ? waterFee.value : this.waterFee,
         leastMarkDate:
             leastMarkDate.present ? leastMarkDate.value : this.leastMarkDate,
       );
+  Room copyWithCompanion(RoomsCompanion data) {
+    return Room(
+      id: data.id.present ? data.id.value : this.id,
+      floorId: data.floorId.present ? data.floorId.value : this.floorId,
+      name: data.name.present ? data.name.value : this.name,
+      sort: data.sort.present ? data.sort.value : this.sort,
+      electMeters:
+          data.electMeters.present ? data.electMeters.value : this.electMeters,
+      waterMeters:
+          data.waterMeters.present ? data.waterMeters.value : this.waterMeters,
+      rent: data.rent.present ? data.rent.value : this.rent,
+      electFee: data.electFee.present ? data.electFee.value : this.electFee,
+      waterFee: data.waterFee.present ? data.waterFee.value : this.waterFee,
+      leastMarkDate: data.leastMarkDate.present
+          ? data.leastMarkDate.value
+          : this.leastMarkDate,
+    );
+  }
+
   @override
   String toString() {
     return (StringBuffer('Room(')
@@ -875,6 +988,8 @@ class Room extends DataClass implements Insertable<Room> {
           ..write('floorId: $floorId, ')
           ..write('name: $name, ')
           ..write('sort: $sort, ')
+          ..write('electMeters: $electMeters, ')
+          ..write('waterMeters: $waterMeters, ')
           ..write('rent: $rent, ')
           ..write('electFee: $electFee, ')
           ..write('waterFee: $waterFee, ')
@@ -884,8 +999,8 @@ class Room extends DataClass implements Insertable<Room> {
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, floorId, name, sort, rent, electFee, waterFee, leastMarkDate);
+  int get hashCode => Object.hash(id, floorId, name, sort, electMeters,
+      waterMeters, rent, electFee, waterFee, leastMarkDate);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -894,6 +1009,8 @@ class Room extends DataClass implements Insertable<Room> {
           other.floorId == this.floorId &&
           other.name == this.name &&
           other.sort == this.sort &&
+          other.electMeters == this.electMeters &&
+          other.waterMeters == this.waterMeters &&
           other.rent == this.rent &&
           other.electFee == this.electFee &&
           other.waterFee == this.waterFee &&
@@ -905,6 +1022,8 @@ class RoomsCompanion extends UpdateCompanion<Room> {
   final Value<int> floorId;
   final Value<String> name;
   final Value<int?> sort;
+  final Value<int?> electMeters;
+  final Value<int?> waterMeters;
   final Value<double?> rent;
   final Value<double?> electFee;
   final Value<double?> waterFee;
@@ -914,6 +1033,8 @@ class RoomsCompanion extends UpdateCompanion<Room> {
     this.floorId = const Value.absent(),
     this.name = const Value.absent(),
     this.sort = const Value.absent(),
+    this.electMeters = const Value.absent(),
+    this.waterMeters = const Value.absent(),
     this.rent = const Value.absent(),
     this.electFee = const Value.absent(),
     this.waterFee = const Value.absent(),
@@ -924,6 +1045,8 @@ class RoomsCompanion extends UpdateCompanion<Room> {
     required int floorId,
     required String name,
     this.sort = const Value.absent(),
+    this.electMeters = const Value.absent(),
+    this.waterMeters = const Value.absent(),
     this.rent = const Value.absent(),
     this.electFee = const Value.absent(),
     this.waterFee = const Value.absent(),
@@ -935,6 +1058,8 @@ class RoomsCompanion extends UpdateCompanion<Room> {
     Expression<int>? floorId,
     Expression<String>? name,
     Expression<int>? sort,
+    Expression<int>? electMeters,
+    Expression<int>? waterMeters,
     Expression<double>? rent,
     Expression<double>? electFee,
     Expression<double>? waterFee,
@@ -945,6 +1070,8 @@ class RoomsCompanion extends UpdateCompanion<Room> {
       if (floorId != null) 'floor_id': floorId,
       if (name != null) 'name': name,
       if (sort != null) 'sort': sort,
+      if (electMeters != null) 'elect_meters': electMeters,
+      if (waterMeters != null) 'water_meters': waterMeters,
       if (rent != null) 'rent': rent,
       if (electFee != null) 'elect_fee': electFee,
       if (waterFee != null) 'water_fee': waterFee,
@@ -957,6 +1084,8 @@ class RoomsCompanion extends UpdateCompanion<Room> {
       Value<int>? floorId,
       Value<String>? name,
       Value<int?>? sort,
+      Value<int?>? electMeters,
+      Value<int?>? waterMeters,
       Value<double?>? rent,
       Value<double?>? electFee,
       Value<double?>? waterFee,
@@ -966,6 +1095,8 @@ class RoomsCompanion extends UpdateCompanion<Room> {
       floorId: floorId ?? this.floorId,
       name: name ?? this.name,
       sort: sort ?? this.sort,
+      electMeters: electMeters ?? this.electMeters,
+      waterMeters: waterMeters ?? this.waterMeters,
       rent: rent ?? this.rent,
       electFee: electFee ?? this.electFee,
       waterFee: waterFee ?? this.waterFee,
@@ -987,6 +1118,12 @@ class RoomsCompanion extends UpdateCompanion<Room> {
     }
     if (sort.present) {
       map['sort'] = Variable<int>(sort.value);
+    }
+    if (electMeters.present) {
+      map['elect_meters'] = Variable<int>(electMeters.value);
+    }
+    if (waterMeters.present) {
+      map['water_meters'] = Variable<int>(waterMeters.value);
     }
     if (rent.present) {
       map['rent'] = Variable<double>(rent.value);
@@ -1010,6 +1147,8 @@ class RoomsCompanion extends UpdateCompanion<Room> {
           ..write('floorId: $floorId, ')
           ..write('name: $name, ')
           ..write('sort: $sort, ')
+          ..write('electMeters: $electMeters, ')
+          ..write('waterMeters: $waterMeters, ')
           ..write('rent: $rent, ')
           ..write('electFee: $electFee, ')
           ..write('waterFee: $waterFee, ')
@@ -1043,6 +1182,13 @@ class $RoomDaysTable extends RoomDays with TableInfo<$RoomDaysTable, RoomDay> {
   late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
       'date', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _seqMeta = const VerificationMeta('seq');
+  @override
+  late final GeneratedColumn<int> seq = GeneratedColumn<int>(
+      'seq', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: Constant(1));
   static const VerificationMeta _electMeta = const VerificationMeta('elect');
   @override
   late final GeneratedColumn<double> elect = GeneratedColumn<double>(
@@ -1058,11 +1204,12 @@ class $RoomDaysTable extends RoomDays with TableInfo<$RoomDaysTable, RoomDay> {
       requiredDuringInsert: false,
       defaultValue: Constant(0));
   @override
-  List<GeneratedColumn> get $columns => [id, roomId, date, elect, water];
+  List<GeneratedColumn> get $columns => [id, roomId, date, seq, elect, water];
   @override
-  String get aliasedName => _alias ?? 'room_days';
+  String get aliasedName => _alias ?? actualTableName;
   @override
-  String get actualTableName => 'room_days';
+  String get actualTableName => $name;
+  static const String $name = 'room_days';
   @override
   VerificationContext validateIntegrity(Insertable<RoomDay> instance,
       {bool isInserting = false}) {
@@ -1083,6 +1230,10 @@ class $RoomDaysTable extends RoomDays with TableInfo<$RoomDaysTable, RoomDay> {
     } else if (isInserting) {
       context.missing(_dateMeta);
     }
+    if (data.containsKey('seq')) {
+      context.handle(
+          _seqMeta, seq.isAcceptableOrUnknown(data['seq']!, _seqMeta));
+    }
     if (data.containsKey('elect')) {
       context.handle(
           _electMeta, elect.isAcceptableOrUnknown(data['elect']!, _electMeta));
@@ -1098,7 +1249,7 @@ class $RoomDaysTable extends RoomDays with TableInfo<$RoomDaysTable, RoomDay> {
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
-        {roomId, date},
+        {roomId, date, seq},
       ];
   @override
   RoomDay map(Map<String, dynamic> data, {String? tablePrefix}) {
@@ -1110,6 +1261,8 @@ class $RoomDaysTable extends RoomDays with TableInfo<$RoomDaysTable, RoomDay> {
           .read(DriftSqlType.int, data['${effectivePrefix}room_id'])!,
       date: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}date'])!,
+      seq: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}seq'])!,
       elect: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}elect']),
       water: attachedDatabase.typeMapping
@@ -1127,12 +1280,14 @@ class RoomDay extends DataClass implements Insertable<RoomDay> {
   final int? id;
   final int roomId;
   final DateTime date;
+  final int seq;
   final double? elect;
   final double? water;
   const RoomDay(
       {this.id,
       required this.roomId,
       required this.date,
+      required this.seq,
       this.elect,
       this.water});
   @override
@@ -1143,6 +1298,7 @@ class RoomDay extends DataClass implements Insertable<RoomDay> {
     }
     map['room_id'] = Variable<int>(roomId);
     map['date'] = Variable<DateTime>(date);
+    map['seq'] = Variable<int>(seq);
     if (!nullToAbsent || elect != null) {
       map['elect'] = Variable<double>(elect);
     }
@@ -1157,6 +1313,7 @@ class RoomDay extends DataClass implements Insertable<RoomDay> {
       id: id == null && nullToAbsent ? const Value.absent() : Value(id),
       roomId: Value(roomId),
       date: Value(date),
+      seq: Value(seq),
       elect:
           elect == null && nullToAbsent ? const Value.absent() : Value(elect),
       water:
@@ -1171,6 +1328,7 @@ class RoomDay extends DataClass implements Insertable<RoomDay> {
       id: serializer.fromJson<int?>(json['id']),
       roomId: serializer.fromJson<int>(json['roomId']),
       date: serializer.fromJson<DateTime>(json['date']),
+      seq: serializer.fromJson<int>(json['seq']),
       elect: serializer.fromJson<double?>(json['elect']),
       water: serializer.fromJson<double?>(json['water']),
     );
@@ -1182,6 +1340,7 @@ class RoomDay extends DataClass implements Insertable<RoomDay> {
       'id': serializer.toJson<int?>(id),
       'roomId': serializer.toJson<int>(roomId),
       'date': serializer.toJson<DateTime>(date),
+      'seq': serializer.toJson<int>(seq),
       'elect': serializer.toJson<double?>(elect),
       'water': serializer.toJson<double?>(water),
     };
@@ -1191,21 +1350,35 @@ class RoomDay extends DataClass implements Insertable<RoomDay> {
           {Value<int?> id = const Value.absent(),
           int? roomId,
           DateTime? date,
+          int? seq,
           Value<double?> elect = const Value.absent(),
           Value<double?> water = const Value.absent()}) =>
       RoomDay(
         id: id.present ? id.value : this.id,
         roomId: roomId ?? this.roomId,
         date: date ?? this.date,
+        seq: seq ?? this.seq,
         elect: elect.present ? elect.value : this.elect,
         water: water.present ? water.value : this.water,
       );
+  RoomDay copyWithCompanion(RoomDaysCompanion data) {
+    return RoomDay(
+      id: data.id.present ? data.id.value : this.id,
+      roomId: data.roomId.present ? data.roomId.value : this.roomId,
+      date: data.date.present ? data.date.value : this.date,
+      seq: data.seq.present ? data.seq.value : this.seq,
+      elect: data.elect.present ? data.elect.value : this.elect,
+      water: data.water.present ? data.water.value : this.water,
+    );
+  }
+
   @override
   String toString() {
     return (StringBuffer('RoomDay(')
           ..write('id: $id, ')
           ..write('roomId: $roomId, ')
           ..write('date: $date, ')
+          ..write('seq: $seq, ')
           ..write('elect: $elect, ')
           ..write('water: $water')
           ..write(')'))
@@ -1213,7 +1386,7 @@ class RoomDay extends DataClass implements Insertable<RoomDay> {
   }
 
   @override
-  int get hashCode => Object.hash(id, roomId, date, elect, water);
+  int get hashCode => Object.hash(id, roomId, date, seq, elect, water);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1221,6 +1394,7 @@ class RoomDay extends DataClass implements Insertable<RoomDay> {
           other.id == this.id &&
           other.roomId == this.roomId &&
           other.date == this.date &&
+          other.seq == this.seq &&
           other.elect == this.elect &&
           other.water == this.water);
 }
@@ -1229,12 +1403,14 @@ class RoomDaysCompanion extends UpdateCompanion<RoomDay> {
   final Value<int?> id;
   final Value<int> roomId;
   final Value<DateTime> date;
+  final Value<int> seq;
   final Value<double?> elect;
   final Value<double?> water;
   const RoomDaysCompanion({
     this.id = const Value.absent(),
     this.roomId = const Value.absent(),
     this.date = const Value.absent(),
+    this.seq = const Value.absent(),
     this.elect = const Value.absent(),
     this.water = const Value.absent(),
   });
@@ -1242,6 +1418,7 @@ class RoomDaysCompanion extends UpdateCompanion<RoomDay> {
     this.id = const Value.absent(),
     required int roomId,
     required DateTime date,
+    this.seq = const Value.absent(),
     this.elect = const Value.absent(),
     this.water = const Value.absent(),
   })  : roomId = Value(roomId),
@@ -1250,6 +1427,7 @@ class RoomDaysCompanion extends UpdateCompanion<RoomDay> {
     Expression<int>? id,
     Expression<int>? roomId,
     Expression<DateTime>? date,
+    Expression<int>? seq,
     Expression<double>? elect,
     Expression<double>? water,
   }) {
@@ -1257,6 +1435,7 @@ class RoomDaysCompanion extends UpdateCompanion<RoomDay> {
       if (id != null) 'id': id,
       if (roomId != null) 'room_id': roomId,
       if (date != null) 'date': date,
+      if (seq != null) 'seq': seq,
       if (elect != null) 'elect': elect,
       if (water != null) 'water': water,
     });
@@ -1266,12 +1445,14 @@ class RoomDaysCompanion extends UpdateCompanion<RoomDay> {
       {Value<int?>? id,
       Value<int>? roomId,
       Value<DateTime>? date,
+      Value<int>? seq,
       Value<double?>? elect,
       Value<double?>? water}) {
     return RoomDaysCompanion(
       id: id ?? this.id,
       roomId: roomId ?? this.roomId,
       date: date ?? this.date,
+      seq: seq ?? this.seq,
       elect: elect ?? this.elect,
       water: water ?? this.water,
     );
@@ -1289,6 +1470,9 @@ class RoomDaysCompanion extends UpdateCompanion<RoomDay> {
     if (date.present) {
       map['date'] = Variable<DateTime>(date.value);
     }
+    if (seq.present) {
+      map['seq'] = Variable<int>(seq.value);
+    }
     if (elect.present) {
       map['elect'] = Variable<double>(elect.value);
     }
@@ -1304,6 +1488,7 @@ class RoomDaysCompanion extends UpdateCompanion<RoomDay> {
           ..write('id: $id, ')
           ..write('roomId: $roomId, ')
           ..write('date: $date, ')
+          ..write('seq: $seq, ')
           ..write('elect: $elect, ')
           ..write('water: $water')
           ..write(')'))
@@ -1349,9 +1534,10 @@ class $RoomOptionsTable extends RoomOptions
   @override
   List<GeneratedColumn> get $columns => [id, roomId, name, fee];
   @override
-  String get aliasedName => _alias ?? 'room_options';
+  String get aliasedName => _alias ?? actualTableName;
   @override
-  String get actualTableName => 'room_options';
+  String get actualTableName => $name;
+  static const String $name = 'room_options';
   @override
   VerificationContext validateIntegrity(Insertable<RoomOption> instance,
       {bool isInserting = false}) {
@@ -1464,6 +1650,15 @@ class RoomOption extends DataClass implements Insertable<RoomOption> {
         name: name ?? this.name,
         fee: fee.present ? fee.value : this.fee,
       );
+  RoomOption copyWithCompanion(RoomOptionsCompanion data) {
+    return RoomOption(
+      id: data.id.present ? data.id.value : this.id,
+      roomId: data.roomId.present ? data.roomId.value : this.roomId,
+      name: data.name.present ? data.name.value : this.name,
+      fee: data.fee.present ? data.fee.value : this.fee,
+    );
+  }
+
   @override
   String toString() {
     return (StringBuffer('RoomOption(')
@@ -1653,9 +1848,10 @@ class $RoomSnapshotsTable extends RoomSnapshots
         totalAmount
       ];
   @override
-  String get aliasedName => _alias ?? 'room_snapshots';
+  String get aliasedName => _alias ?? actualTableName;
   @override
-  String get actualTableName => 'room_snapshots';
+  String get actualTableName => $name;
+  static const String $name = 'room_snapshots';
   @override
   VerificationContext validateIntegrity(Insertable<RoomSnapshot> instance,
       {bool isInserting = false}) {
@@ -1883,6 +2079,26 @@ class RoomSnapshot extends DataClass implements Insertable<RoomSnapshot> {
         water: water.present ? water.value : this.water,
         totalAmount: totalAmount.present ? totalAmount.value : this.totalAmount,
       );
+  RoomSnapshot copyWithCompanion(RoomSnapshotsCompanion data) {
+    return RoomSnapshot(
+      id: data.id.present ? data.id.value : this.id,
+      roomId: data.roomId.present ? data.roomId.value : this.roomId,
+      snapshotStartDate: data.snapshotStartDate.present
+          ? data.snapshotStartDate.value
+          : this.snapshotStartDate,
+      snapshotEndDate: data.snapshotEndDate.present
+          ? data.snapshotEndDate.value
+          : this.snapshotEndDate,
+      rent: data.rent.present ? data.rent.value : this.rent,
+      electFee: data.electFee.present ? data.electFee.value : this.electFee,
+      waterFee: data.waterFee.present ? data.waterFee.value : this.waterFee,
+      elect: data.elect.present ? data.elect.value : this.elect,
+      water: data.water.present ? data.water.value : this.water,
+      totalAmount:
+          data.totalAmount.present ? data.totalAmount.value : this.totalAmount,
+    );
+  }
+
   @override
   String toString() {
     return (StringBuffer('RoomSnapshot(')
@@ -2114,9 +2330,10 @@ class $RoomSnapshotItemsTable extends RoomSnapshotItems
   List<GeneratedColumn> get $columns =>
       [id, roomId, snapshotId, name, desc, fee];
   @override
-  String get aliasedName => _alias ?? 'room_snapshot_items';
+  String get aliasedName => _alias ?? actualTableName;
   @override
-  String get actualTableName => 'room_snapshot_items';
+  String get actualTableName => $name;
+  static const String $name = 'room_snapshot_items';
   @override
   VerificationContext validateIntegrity(Insertable<RoomSnapshotItem> instance,
       {bool isInserting = false}) {
@@ -2267,6 +2484,18 @@ class RoomSnapshotItem extends DataClass
         desc: desc.present ? desc.value : this.desc,
         fee: fee.present ? fee.value : this.fee,
       );
+  RoomSnapshotItem copyWithCompanion(RoomSnapshotItemsCompanion data) {
+    return RoomSnapshotItem(
+      id: data.id.present ? data.id.value : this.id,
+      roomId: data.roomId.present ? data.roomId.value : this.roomId,
+      snapshotId:
+          data.snapshotId.present ? data.snapshotId.value : this.snapshotId,
+      name: data.name.present ? data.name.value : this.name,
+      desc: data.desc.present ? data.desc.value : this.desc,
+      fee: data.fee.present ? data.fee.value : this.fee,
+    );
+  }
+
   @override
   String toString() {
     return (StringBuffer('RoomSnapshotItem(')
@@ -2394,6 +2623,7 @@ class RoomSnapshotItemsCompanion extends UpdateCompanion<RoomSnapshotItem> {
 
 abstract class _$HermesDatabase extends GeneratedDatabase {
   _$HermesDatabase(QueryExecutor e) : super(e);
+  $HermesDatabaseManager get managers => $HermesDatabaseManager(this);
   late final $HermesTable hermes = $HermesTable(this);
   late final $BuildingsTable buildings = $BuildingsTable(this);
   late final $FloorsTable floors = $FloorsTable(this);
@@ -2420,4 +2650,1392 @@ abstract class _$HermesDatabase extends GeneratedDatabase {
         roomSnapshots,
         roomSnapshotItems
       ];
+}
+
+typedef $$HermesTableCreateCompanionBuilder = HermesCompanion Function({
+  Value<int?> id,
+});
+typedef $$HermesTableUpdateCompanionBuilder = HermesCompanion Function({
+  Value<int?> id,
+});
+
+class $$HermesTableFilterComposer
+    extends Composer<_$HermesDatabase, $HermesTable> {
+  $$HermesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+}
+
+class $$HermesTableOrderingComposer
+    extends Composer<_$HermesDatabase, $HermesTable> {
+  $$HermesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+}
+
+class $$HermesTableAnnotationComposer
+    extends Composer<_$HermesDatabase, $HermesTable> {
+  $$HermesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+}
+
+class $$HermesTableTableManager extends RootTableManager<
+    _$HermesDatabase,
+    $HermesTable,
+    Herme,
+    $$HermesTableFilterComposer,
+    $$HermesTableOrderingComposer,
+    $$HermesTableAnnotationComposer,
+    $$HermesTableCreateCompanionBuilder,
+    $$HermesTableUpdateCompanionBuilder,
+    (Herme, BaseReferences<_$HermesDatabase, $HermesTable, Herme>),
+    Herme,
+    PrefetchHooks Function()> {
+  $$HermesTableTableManager(_$HermesDatabase db, $HermesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HermesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HermesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HermesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+          }) =>
+              HermesCompanion(
+            id: id,
+          ),
+          createCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+          }) =>
+              HermesCompanion.insert(
+            id: id,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$HermesTableProcessedTableManager = ProcessedTableManager<
+    _$HermesDatabase,
+    $HermesTable,
+    Herme,
+    $$HermesTableFilterComposer,
+    $$HermesTableOrderingComposer,
+    $$HermesTableAnnotationComposer,
+    $$HermesTableCreateCompanionBuilder,
+    $$HermesTableUpdateCompanionBuilder,
+    (Herme, BaseReferences<_$HermesDatabase, $HermesTable, Herme>),
+    Herme,
+    PrefetchHooks Function()>;
+typedef $$BuildingsTableCreateCompanionBuilder = BuildingsCompanion Function({
+  Value<int?> id,
+  required String name,
+  Value<int?> sort,
+});
+typedef $$BuildingsTableUpdateCompanionBuilder = BuildingsCompanion Function({
+  Value<int?> id,
+  Value<String> name,
+  Value<int?> sort,
+});
+
+class $$BuildingsTableFilterComposer
+    extends Composer<_$HermesDatabase, $BuildingsTable> {
+  $$BuildingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get sort => $composableBuilder(
+      column: $table.sort, builder: (column) => ColumnFilters(column));
+}
+
+class $$BuildingsTableOrderingComposer
+    extends Composer<_$HermesDatabase, $BuildingsTable> {
+  $$BuildingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get sort => $composableBuilder(
+      column: $table.sort, builder: (column) => ColumnOrderings(column));
+}
+
+class $$BuildingsTableAnnotationComposer
+    extends Composer<_$HermesDatabase, $BuildingsTable> {
+  $$BuildingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get sort =>
+      $composableBuilder(column: $table.sort, builder: (column) => column);
+}
+
+class $$BuildingsTableTableManager extends RootTableManager<
+    _$HermesDatabase,
+    $BuildingsTable,
+    Building,
+    $$BuildingsTableFilterComposer,
+    $$BuildingsTableOrderingComposer,
+    $$BuildingsTableAnnotationComposer,
+    $$BuildingsTableCreateCompanionBuilder,
+    $$BuildingsTableUpdateCompanionBuilder,
+    (Building, BaseReferences<_$HermesDatabase, $BuildingsTable, Building>),
+    Building,
+    PrefetchHooks Function()> {
+  $$BuildingsTableTableManager(_$HermesDatabase db, $BuildingsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BuildingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BuildingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BuildingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<int?> sort = const Value.absent(),
+          }) =>
+              BuildingsCompanion(
+            id: id,
+            name: name,
+            sort: sort,
+          ),
+          createCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            required String name,
+            Value<int?> sort = const Value.absent(),
+          }) =>
+              BuildingsCompanion.insert(
+            id: id,
+            name: name,
+            sort: sort,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$BuildingsTableProcessedTableManager = ProcessedTableManager<
+    _$HermesDatabase,
+    $BuildingsTable,
+    Building,
+    $$BuildingsTableFilterComposer,
+    $$BuildingsTableOrderingComposer,
+    $$BuildingsTableAnnotationComposer,
+    $$BuildingsTableCreateCompanionBuilder,
+    $$BuildingsTableUpdateCompanionBuilder,
+    (Building, BaseReferences<_$HermesDatabase, $BuildingsTable, Building>),
+    Building,
+    PrefetchHooks Function()>;
+typedef $$FloorsTableCreateCompanionBuilder = FloorsCompanion Function({
+  Value<int?> id,
+  required int buildingId,
+  required String name,
+  Value<int?> sort,
+});
+typedef $$FloorsTableUpdateCompanionBuilder = FloorsCompanion Function({
+  Value<int?> id,
+  Value<int> buildingId,
+  Value<String> name,
+  Value<int?> sort,
+});
+
+class $$FloorsTableFilterComposer
+    extends Composer<_$HermesDatabase, $FloorsTable> {
+  $$FloorsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get buildingId => $composableBuilder(
+      column: $table.buildingId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get sort => $composableBuilder(
+      column: $table.sort, builder: (column) => ColumnFilters(column));
+}
+
+class $$FloorsTableOrderingComposer
+    extends Composer<_$HermesDatabase, $FloorsTable> {
+  $$FloorsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get buildingId => $composableBuilder(
+      column: $table.buildingId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get sort => $composableBuilder(
+      column: $table.sort, builder: (column) => ColumnOrderings(column));
+}
+
+class $$FloorsTableAnnotationComposer
+    extends Composer<_$HermesDatabase, $FloorsTable> {
+  $$FloorsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get buildingId => $composableBuilder(
+      column: $table.buildingId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get sort =>
+      $composableBuilder(column: $table.sort, builder: (column) => column);
+}
+
+class $$FloorsTableTableManager extends RootTableManager<
+    _$HermesDatabase,
+    $FloorsTable,
+    Floor,
+    $$FloorsTableFilterComposer,
+    $$FloorsTableOrderingComposer,
+    $$FloorsTableAnnotationComposer,
+    $$FloorsTableCreateCompanionBuilder,
+    $$FloorsTableUpdateCompanionBuilder,
+    (Floor, BaseReferences<_$HermesDatabase, $FloorsTable, Floor>),
+    Floor,
+    PrefetchHooks Function()> {
+  $$FloorsTableTableManager(_$HermesDatabase db, $FloorsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FloorsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FloorsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FloorsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            Value<int> buildingId = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<int?> sort = const Value.absent(),
+          }) =>
+              FloorsCompanion(
+            id: id,
+            buildingId: buildingId,
+            name: name,
+            sort: sort,
+          ),
+          createCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            required int buildingId,
+            required String name,
+            Value<int?> sort = const Value.absent(),
+          }) =>
+              FloorsCompanion.insert(
+            id: id,
+            buildingId: buildingId,
+            name: name,
+            sort: sort,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$FloorsTableProcessedTableManager = ProcessedTableManager<
+    _$HermesDatabase,
+    $FloorsTable,
+    Floor,
+    $$FloorsTableFilterComposer,
+    $$FloorsTableOrderingComposer,
+    $$FloorsTableAnnotationComposer,
+    $$FloorsTableCreateCompanionBuilder,
+    $$FloorsTableUpdateCompanionBuilder,
+    (Floor, BaseReferences<_$HermesDatabase, $FloorsTable, Floor>),
+    Floor,
+    PrefetchHooks Function()>;
+typedef $$RoomsTableCreateCompanionBuilder = RoomsCompanion Function({
+  Value<int?> id,
+  required int floorId,
+  required String name,
+  Value<int?> sort,
+  Value<int?> electMeters,
+  Value<int?> waterMeters,
+  Value<double?> rent,
+  Value<double?> electFee,
+  Value<double?> waterFee,
+  Value<DateTime?> leastMarkDate,
+});
+typedef $$RoomsTableUpdateCompanionBuilder = RoomsCompanion Function({
+  Value<int?> id,
+  Value<int> floorId,
+  Value<String> name,
+  Value<int?> sort,
+  Value<int?> electMeters,
+  Value<int?> waterMeters,
+  Value<double?> rent,
+  Value<double?> electFee,
+  Value<double?> waterFee,
+  Value<DateTime?> leastMarkDate,
+});
+
+class $$RoomsTableFilterComposer
+    extends Composer<_$HermesDatabase, $RoomsTable> {
+  $$RoomsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get floorId => $composableBuilder(
+      column: $table.floorId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get sort => $composableBuilder(
+      column: $table.sort, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get electMeters => $composableBuilder(
+      column: $table.electMeters, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get waterMeters => $composableBuilder(
+      column: $table.waterMeters, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get rent => $composableBuilder(
+      column: $table.rent, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get electFee => $composableBuilder(
+      column: $table.electFee, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get waterFee => $composableBuilder(
+      column: $table.waterFee, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get leastMarkDate => $composableBuilder(
+      column: $table.leastMarkDate, builder: (column) => ColumnFilters(column));
+}
+
+class $$RoomsTableOrderingComposer
+    extends Composer<_$HermesDatabase, $RoomsTable> {
+  $$RoomsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get floorId => $composableBuilder(
+      column: $table.floorId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get sort => $composableBuilder(
+      column: $table.sort, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get electMeters => $composableBuilder(
+      column: $table.electMeters, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get waterMeters => $composableBuilder(
+      column: $table.waterMeters, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get rent => $composableBuilder(
+      column: $table.rent, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get electFee => $composableBuilder(
+      column: $table.electFee, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get waterFee => $composableBuilder(
+      column: $table.waterFee, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get leastMarkDate => $composableBuilder(
+      column: $table.leastMarkDate,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$RoomsTableAnnotationComposer
+    extends Composer<_$HermesDatabase, $RoomsTable> {
+  $$RoomsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get floorId =>
+      $composableBuilder(column: $table.floorId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get sort =>
+      $composableBuilder(column: $table.sort, builder: (column) => column);
+
+  GeneratedColumn<int> get electMeters => $composableBuilder(
+      column: $table.electMeters, builder: (column) => column);
+
+  GeneratedColumn<int> get waterMeters => $composableBuilder(
+      column: $table.waterMeters, builder: (column) => column);
+
+  GeneratedColumn<double> get rent =>
+      $composableBuilder(column: $table.rent, builder: (column) => column);
+
+  GeneratedColumn<double> get electFee =>
+      $composableBuilder(column: $table.electFee, builder: (column) => column);
+
+  GeneratedColumn<double> get waterFee =>
+      $composableBuilder(column: $table.waterFee, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get leastMarkDate => $composableBuilder(
+      column: $table.leastMarkDate, builder: (column) => column);
+}
+
+class $$RoomsTableTableManager extends RootTableManager<
+    _$HermesDatabase,
+    $RoomsTable,
+    Room,
+    $$RoomsTableFilterComposer,
+    $$RoomsTableOrderingComposer,
+    $$RoomsTableAnnotationComposer,
+    $$RoomsTableCreateCompanionBuilder,
+    $$RoomsTableUpdateCompanionBuilder,
+    (Room, BaseReferences<_$HermesDatabase, $RoomsTable, Room>),
+    Room,
+    PrefetchHooks Function()> {
+  $$RoomsTableTableManager(_$HermesDatabase db, $RoomsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RoomsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RoomsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RoomsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            Value<int> floorId = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<int?> sort = const Value.absent(),
+            Value<int?> electMeters = const Value.absent(),
+            Value<int?> waterMeters = const Value.absent(),
+            Value<double?> rent = const Value.absent(),
+            Value<double?> electFee = const Value.absent(),
+            Value<double?> waterFee = const Value.absent(),
+            Value<DateTime?> leastMarkDate = const Value.absent(),
+          }) =>
+              RoomsCompanion(
+            id: id,
+            floorId: floorId,
+            name: name,
+            sort: sort,
+            electMeters: electMeters,
+            waterMeters: waterMeters,
+            rent: rent,
+            electFee: electFee,
+            waterFee: waterFee,
+            leastMarkDate: leastMarkDate,
+          ),
+          createCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            required int floorId,
+            required String name,
+            Value<int?> sort = const Value.absent(),
+            Value<int?> electMeters = const Value.absent(),
+            Value<int?> waterMeters = const Value.absent(),
+            Value<double?> rent = const Value.absent(),
+            Value<double?> electFee = const Value.absent(),
+            Value<double?> waterFee = const Value.absent(),
+            Value<DateTime?> leastMarkDate = const Value.absent(),
+          }) =>
+              RoomsCompanion.insert(
+            id: id,
+            floorId: floorId,
+            name: name,
+            sort: sort,
+            electMeters: electMeters,
+            waterMeters: waterMeters,
+            rent: rent,
+            electFee: electFee,
+            waterFee: waterFee,
+            leastMarkDate: leastMarkDate,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RoomsTableProcessedTableManager = ProcessedTableManager<
+    _$HermesDatabase,
+    $RoomsTable,
+    Room,
+    $$RoomsTableFilterComposer,
+    $$RoomsTableOrderingComposer,
+    $$RoomsTableAnnotationComposer,
+    $$RoomsTableCreateCompanionBuilder,
+    $$RoomsTableUpdateCompanionBuilder,
+    (Room, BaseReferences<_$HermesDatabase, $RoomsTable, Room>),
+    Room,
+    PrefetchHooks Function()>;
+typedef $$RoomDaysTableCreateCompanionBuilder = RoomDaysCompanion Function({
+  Value<int?> id,
+  required int roomId,
+  required DateTime date,
+  Value<int> seq,
+  Value<double?> elect,
+  Value<double?> water,
+});
+typedef $$RoomDaysTableUpdateCompanionBuilder = RoomDaysCompanion Function({
+  Value<int?> id,
+  Value<int> roomId,
+  Value<DateTime> date,
+  Value<int> seq,
+  Value<double?> elect,
+  Value<double?> water,
+});
+
+class $$RoomDaysTableFilterComposer
+    extends Composer<_$HermesDatabase, $RoomDaysTable> {
+  $$RoomDaysTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get roomId => $composableBuilder(
+      column: $table.roomId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+      column: $table.date, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get seq => $composableBuilder(
+      column: $table.seq, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get elect => $composableBuilder(
+      column: $table.elect, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get water => $composableBuilder(
+      column: $table.water, builder: (column) => ColumnFilters(column));
+}
+
+class $$RoomDaysTableOrderingComposer
+    extends Composer<_$HermesDatabase, $RoomDaysTable> {
+  $$RoomDaysTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get roomId => $composableBuilder(
+      column: $table.roomId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+      column: $table.date, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get seq => $composableBuilder(
+      column: $table.seq, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get elect => $composableBuilder(
+      column: $table.elect, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get water => $composableBuilder(
+      column: $table.water, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RoomDaysTableAnnotationComposer
+    extends Composer<_$HermesDatabase, $RoomDaysTable> {
+  $$RoomDaysTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get roomId =>
+      $composableBuilder(column: $table.roomId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<int> get seq =>
+      $composableBuilder(column: $table.seq, builder: (column) => column);
+
+  GeneratedColumn<double> get elect =>
+      $composableBuilder(column: $table.elect, builder: (column) => column);
+
+  GeneratedColumn<double> get water =>
+      $composableBuilder(column: $table.water, builder: (column) => column);
+}
+
+class $$RoomDaysTableTableManager extends RootTableManager<
+    _$HermesDatabase,
+    $RoomDaysTable,
+    RoomDay,
+    $$RoomDaysTableFilterComposer,
+    $$RoomDaysTableOrderingComposer,
+    $$RoomDaysTableAnnotationComposer,
+    $$RoomDaysTableCreateCompanionBuilder,
+    $$RoomDaysTableUpdateCompanionBuilder,
+    (RoomDay, BaseReferences<_$HermesDatabase, $RoomDaysTable, RoomDay>),
+    RoomDay,
+    PrefetchHooks Function()> {
+  $$RoomDaysTableTableManager(_$HermesDatabase db, $RoomDaysTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RoomDaysTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RoomDaysTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RoomDaysTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            Value<int> roomId = const Value.absent(),
+            Value<DateTime> date = const Value.absent(),
+            Value<int> seq = const Value.absent(),
+            Value<double?> elect = const Value.absent(),
+            Value<double?> water = const Value.absent(),
+          }) =>
+              RoomDaysCompanion(
+            id: id,
+            roomId: roomId,
+            date: date,
+            seq: seq,
+            elect: elect,
+            water: water,
+          ),
+          createCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            required int roomId,
+            required DateTime date,
+            Value<int> seq = const Value.absent(),
+            Value<double?> elect = const Value.absent(),
+            Value<double?> water = const Value.absent(),
+          }) =>
+              RoomDaysCompanion.insert(
+            id: id,
+            roomId: roomId,
+            date: date,
+            seq: seq,
+            elect: elect,
+            water: water,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RoomDaysTableProcessedTableManager = ProcessedTableManager<
+    _$HermesDatabase,
+    $RoomDaysTable,
+    RoomDay,
+    $$RoomDaysTableFilterComposer,
+    $$RoomDaysTableOrderingComposer,
+    $$RoomDaysTableAnnotationComposer,
+    $$RoomDaysTableCreateCompanionBuilder,
+    $$RoomDaysTableUpdateCompanionBuilder,
+    (RoomDay, BaseReferences<_$HermesDatabase, $RoomDaysTable, RoomDay>),
+    RoomDay,
+    PrefetchHooks Function()>;
+typedef $$RoomOptionsTableCreateCompanionBuilder = RoomOptionsCompanion
+    Function({
+  Value<int?> id,
+  required int roomId,
+  required String name,
+  Value<double?> fee,
+});
+typedef $$RoomOptionsTableUpdateCompanionBuilder = RoomOptionsCompanion
+    Function({
+  Value<int?> id,
+  Value<int> roomId,
+  Value<String> name,
+  Value<double?> fee,
+});
+
+class $$RoomOptionsTableFilterComposer
+    extends Composer<_$HermesDatabase, $RoomOptionsTable> {
+  $$RoomOptionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get roomId => $composableBuilder(
+      column: $table.roomId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fee => $composableBuilder(
+      column: $table.fee, builder: (column) => ColumnFilters(column));
+}
+
+class $$RoomOptionsTableOrderingComposer
+    extends Composer<_$HermesDatabase, $RoomOptionsTable> {
+  $$RoomOptionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get roomId => $composableBuilder(
+      column: $table.roomId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fee => $composableBuilder(
+      column: $table.fee, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RoomOptionsTableAnnotationComposer
+    extends Composer<_$HermesDatabase, $RoomOptionsTable> {
+  $$RoomOptionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get roomId =>
+      $composableBuilder(column: $table.roomId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get fee =>
+      $composableBuilder(column: $table.fee, builder: (column) => column);
+}
+
+class $$RoomOptionsTableTableManager extends RootTableManager<
+    _$HermesDatabase,
+    $RoomOptionsTable,
+    RoomOption,
+    $$RoomOptionsTableFilterComposer,
+    $$RoomOptionsTableOrderingComposer,
+    $$RoomOptionsTableAnnotationComposer,
+    $$RoomOptionsTableCreateCompanionBuilder,
+    $$RoomOptionsTableUpdateCompanionBuilder,
+    (
+      RoomOption,
+      BaseReferences<_$HermesDatabase, $RoomOptionsTable, RoomOption>
+    ),
+    RoomOption,
+    PrefetchHooks Function()> {
+  $$RoomOptionsTableTableManager(_$HermesDatabase db, $RoomOptionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RoomOptionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RoomOptionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RoomOptionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            Value<int> roomId = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<double?> fee = const Value.absent(),
+          }) =>
+              RoomOptionsCompanion(
+            id: id,
+            roomId: roomId,
+            name: name,
+            fee: fee,
+          ),
+          createCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            required int roomId,
+            required String name,
+            Value<double?> fee = const Value.absent(),
+          }) =>
+              RoomOptionsCompanion.insert(
+            id: id,
+            roomId: roomId,
+            name: name,
+            fee: fee,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RoomOptionsTableProcessedTableManager = ProcessedTableManager<
+    _$HermesDatabase,
+    $RoomOptionsTable,
+    RoomOption,
+    $$RoomOptionsTableFilterComposer,
+    $$RoomOptionsTableOrderingComposer,
+    $$RoomOptionsTableAnnotationComposer,
+    $$RoomOptionsTableCreateCompanionBuilder,
+    $$RoomOptionsTableUpdateCompanionBuilder,
+    (
+      RoomOption,
+      BaseReferences<_$HermesDatabase, $RoomOptionsTable, RoomOption>
+    ),
+    RoomOption,
+    PrefetchHooks Function()>;
+typedef $$RoomSnapshotsTableCreateCompanionBuilder = RoomSnapshotsCompanion
+    Function({
+  Value<int?> id,
+  required int roomId,
+  required DateTime snapshotStartDate,
+  required DateTime snapshotEndDate,
+  Value<double?> rent,
+  Value<double?> electFee,
+  Value<double?> waterFee,
+  Value<double?> elect,
+  Value<double?> water,
+  Value<double?> totalAmount,
+});
+typedef $$RoomSnapshotsTableUpdateCompanionBuilder = RoomSnapshotsCompanion
+    Function({
+  Value<int?> id,
+  Value<int> roomId,
+  Value<DateTime> snapshotStartDate,
+  Value<DateTime> snapshotEndDate,
+  Value<double?> rent,
+  Value<double?> electFee,
+  Value<double?> waterFee,
+  Value<double?> elect,
+  Value<double?> water,
+  Value<double?> totalAmount,
+});
+
+class $$RoomSnapshotsTableFilterComposer
+    extends Composer<_$HermesDatabase, $RoomSnapshotsTable> {
+  $$RoomSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get roomId => $composableBuilder(
+      column: $table.roomId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get snapshotStartDate => $composableBuilder(
+      column: $table.snapshotStartDate,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get snapshotEndDate => $composableBuilder(
+      column: $table.snapshotEndDate,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get rent => $composableBuilder(
+      column: $table.rent, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get electFee => $composableBuilder(
+      column: $table.electFee, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get waterFee => $composableBuilder(
+      column: $table.waterFee, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get elect => $composableBuilder(
+      column: $table.elect, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get water => $composableBuilder(
+      column: $table.water, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get totalAmount => $composableBuilder(
+      column: $table.totalAmount, builder: (column) => ColumnFilters(column));
+}
+
+class $$RoomSnapshotsTableOrderingComposer
+    extends Composer<_$HermesDatabase, $RoomSnapshotsTable> {
+  $$RoomSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get roomId => $composableBuilder(
+      column: $table.roomId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get snapshotStartDate => $composableBuilder(
+      column: $table.snapshotStartDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get snapshotEndDate => $composableBuilder(
+      column: $table.snapshotEndDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get rent => $composableBuilder(
+      column: $table.rent, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get electFee => $composableBuilder(
+      column: $table.electFee, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get waterFee => $composableBuilder(
+      column: $table.waterFee, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get elect => $composableBuilder(
+      column: $table.elect, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get water => $composableBuilder(
+      column: $table.water, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get totalAmount => $composableBuilder(
+      column: $table.totalAmount, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RoomSnapshotsTableAnnotationComposer
+    extends Composer<_$HermesDatabase, $RoomSnapshotsTable> {
+  $$RoomSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get roomId =>
+      $composableBuilder(column: $table.roomId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get snapshotStartDate => $composableBuilder(
+      column: $table.snapshotStartDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get snapshotEndDate => $composableBuilder(
+      column: $table.snapshotEndDate, builder: (column) => column);
+
+  GeneratedColumn<double> get rent =>
+      $composableBuilder(column: $table.rent, builder: (column) => column);
+
+  GeneratedColumn<double> get electFee =>
+      $composableBuilder(column: $table.electFee, builder: (column) => column);
+
+  GeneratedColumn<double> get waterFee =>
+      $composableBuilder(column: $table.waterFee, builder: (column) => column);
+
+  GeneratedColumn<double> get elect =>
+      $composableBuilder(column: $table.elect, builder: (column) => column);
+
+  GeneratedColumn<double> get water =>
+      $composableBuilder(column: $table.water, builder: (column) => column);
+
+  GeneratedColumn<double> get totalAmount => $composableBuilder(
+      column: $table.totalAmount, builder: (column) => column);
+}
+
+class $$RoomSnapshotsTableTableManager extends RootTableManager<
+    _$HermesDatabase,
+    $RoomSnapshotsTable,
+    RoomSnapshot,
+    $$RoomSnapshotsTableFilterComposer,
+    $$RoomSnapshotsTableOrderingComposer,
+    $$RoomSnapshotsTableAnnotationComposer,
+    $$RoomSnapshotsTableCreateCompanionBuilder,
+    $$RoomSnapshotsTableUpdateCompanionBuilder,
+    (
+      RoomSnapshot,
+      BaseReferences<_$HermesDatabase, $RoomSnapshotsTable, RoomSnapshot>
+    ),
+    RoomSnapshot,
+    PrefetchHooks Function()> {
+  $$RoomSnapshotsTableTableManager(
+      _$HermesDatabase db, $RoomSnapshotsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RoomSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RoomSnapshotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RoomSnapshotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            Value<int> roomId = const Value.absent(),
+            Value<DateTime> snapshotStartDate = const Value.absent(),
+            Value<DateTime> snapshotEndDate = const Value.absent(),
+            Value<double?> rent = const Value.absent(),
+            Value<double?> electFee = const Value.absent(),
+            Value<double?> waterFee = const Value.absent(),
+            Value<double?> elect = const Value.absent(),
+            Value<double?> water = const Value.absent(),
+            Value<double?> totalAmount = const Value.absent(),
+          }) =>
+              RoomSnapshotsCompanion(
+            id: id,
+            roomId: roomId,
+            snapshotStartDate: snapshotStartDate,
+            snapshotEndDate: snapshotEndDate,
+            rent: rent,
+            electFee: electFee,
+            waterFee: waterFee,
+            elect: elect,
+            water: water,
+            totalAmount: totalAmount,
+          ),
+          createCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            required int roomId,
+            required DateTime snapshotStartDate,
+            required DateTime snapshotEndDate,
+            Value<double?> rent = const Value.absent(),
+            Value<double?> electFee = const Value.absent(),
+            Value<double?> waterFee = const Value.absent(),
+            Value<double?> elect = const Value.absent(),
+            Value<double?> water = const Value.absent(),
+            Value<double?> totalAmount = const Value.absent(),
+          }) =>
+              RoomSnapshotsCompanion.insert(
+            id: id,
+            roomId: roomId,
+            snapshotStartDate: snapshotStartDate,
+            snapshotEndDate: snapshotEndDate,
+            rent: rent,
+            electFee: electFee,
+            waterFee: waterFee,
+            elect: elect,
+            water: water,
+            totalAmount: totalAmount,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RoomSnapshotsTableProcessedTableManager = ProcessedTableManager<
+    _$HermesDatabase,
+    $RoomSnapshotsTable,
+    RoomSnapshot,
+    $$RoomSnapshotsTableFilterComposer,
+    $$RoomSnapshotsTableOrderingComposer,
+    $$RoomSnapshotsTableAnnotationComposer,
+    $$RoomSnapshotsTableCreateCompanionBuilder,
+    $$RoomSnapshotsTableUpdateCompanionBuilder,
+    (
+      RoomSnapshot,
+      BaseReferences<_$HermesDatabase, $RoomSnapshotsTable, RoomSnapshot>
+    ),
+    RoomSnapshot,
+    PrefetchHooks Function()>;
+typedef $$RoomSnapshotItemsTableCreateCompanionBuilder
+    = RoomSnapshotItemsCompanion Function({
+  Value<int?> id,
+  required int roomId,
+  required int snapshotId,
+  required String name,
+  Value<String?> desc,
+  Value<double?> fee,
+});
+typedef $$RoomSnapshotItemsTableUpdateCompanionBuilder
+    = RoomSnapshotItemsCompanion Function({
+  Value<int?> id,
+  Value<int> roomId,
+  Value<int> snapshotId,
+  Value<String> name,
+  Value<String?> desc,
+  Value<double?> fee,
+});
+
+class $$RoomSnapshotItemsTableFilterComposer
+    extends Composer<_$HermesDatabase, $RoomSnapshotItemsTable> {
+  $$RoomSnapshotItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get roomId => $composableBuilder(
+      column: $table.roomId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get snapshotId => $composableBuilder(
+      column: $table.snapshotId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get desc => $composableBuilder(
+      column: $table.desc, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fee => $composableBuilder(
+      column: $table.fee, builder: (column) => ColumnFilters(column));
+}
+
+class $$RoomSnapshotItemsTableOrderingComposer
+    extends Composer<_$HermesDatabase, $RoomSnapshotItemsTable> {
+  $$RoomSnapshotItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get roomId => $composableBuilder(
+      column: $table.roomId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get snapshotId => $composableBuilder(
+      column: $table.snapshotId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get desc => $composableBuilder(
+      column: $table.desc, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fee => $composableBuilder(
+      column: $table.fee, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RoomSnapshotItemsTableAnnotationComposer
+    extends Composer<_$HermesDatabase, $RoomSnapshotItemsTable> {
+  $$RoomSnapshotItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get roomId =>
+      $composableBuilder(column: $table.roomId, builder: (column) => column);
+
+  GeneratedColumn<int> get snapshotId => $composableBuilder(
+      column: $table.snapshotId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get desc =>
+      $composableBuilder(column: $table.desc, builder: (column) => column);
+
+  GeneratedColumn<double> get fee =>
+      $composableBuilder(column: $table.fee, builder: (column) => column);
+}
+
+class $$RoomSnapshotItemsTableTableManager extends RootTableManager<
+    _$HermesDatabase,
+    $RoomSnapshotItemsTable,
+    RoomSnapshotItem,
+    $$RoomSnapshotItemsTableFilterComposer,
+    $$RoomSnapshotItemsTableOrderingComposer,
+    $$RoomSnapshotItemsTableAnnotationComposer,
+    $$RoomSnapshotItemsTableCreateCompanionBuilder,
+    $$RoomSnapshotItemsTableUpdateCompanionBuilder,
+    (
+      RoomSnapshotItem,
+      BaseReferences<_$HermesDatabase, $RoomSnapshotItemsTable,
+          RoomSnapshotItem>
+    ),
+    RoomSnapshotItem,
+    PrefetchHooks Function()> {
+  $$RoomSnapshotItemsTableTableManager(
+      _$HermesDatabase db, $RoomSnapshotItemsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RoomSnapshotItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RoomSnapshotItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RoomSnapshotItemsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            Value<int> roomId = const Value.absent(),
+            Value<int> snapshotId = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> desc = const Value.absent(),
+            Value<double?> fee = const Value.absent(),
+          }) =>
+              RoomSnapshotItemsCompanion(
+            id: id,
+            roomId: roomId,
+            snapshotId: snapshotId,
+            name: name,
+            desc: desc,
+            fee: fee,
+          ),
+          createCompanionCallback: ({
+            Value<int?> id = const Value.absent(),
+            required int roomId,
+            required int snapshotId,
+            required String name,
+            Value<String?> desc = const Value.absent(),
+            Value<double?> fee = const Value.absent(),
+          }) =>
+              RoomSnapshotItemsCompanion.insert(
+            id: id,
+            roomId: roomId,
+            snapshotId: snapshotId,
+            name: name,
+            desc: desc,
+            fee: fee,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RoomSnapshotItemsTableProcessedTableManager = ProcessedTableManager<
+    _$HermesDatabase,
+    $RoomSnapshotItemsTable,
+    RoomSnapshotItem,
+    $$RoomSnapshotItemsTableFilterComposer,
+    $$RoomSnapshotItemsTableOrderingComposer,
+    $$RoomSnapshotItemsTableAnnotationComposer,
+    $$RoomSnapshotItemsTableCreateCompanionBuilder,
+    $$RoomSnapshotItemsTableUpdateCompanionBuilder,
+    (
+      RoomSnapshotItem,
+      BaseReferences<_$HermesDatabase, $RoomSnapshotItemsTable,
+          RoomSnapshotItem>
+    ),
+    RoomSnapshotItem,
+    PrefetchHooks Function()>;
+
+class $HermesDatabaseManager {
+  final _$HermesDatabase _db;
+  $HermesDatabaseManager(this._db);
+  $$HermesTableTableManager get hermes =>
+      $$HermesTableTableManager(_db, _db.hermes);
+  $$BuildingsTableTableManager get buildings =>
+      $$BuildingsTableTableManager(_db, _db.buildings);
+  $$FloorsTableTableManager get floors =>
+      $$FloorsTableTableManager(_db, _db.floors);
+  $$RoomsTableTableManager get rooms =>
+      $$RoomsTableTableManager(_db, _db.rooms);
+  $$RoomDaysTableTableManager get roomDays =>
+      $$RoomDaysTableTableManager(_db, _db.roomDays);
+  $$RoomOptionsTableTableManager get roomOptions =>
+      $$RoomOptionsTableTableManager(_db, _db.roomOptions);
+  $$RoomSnapshotsTableTableManager get roomSnapshots =>
+      $$RoomSnapshotsTableTableManager(_db, _db.roomSnapshots);
+  $$RoomSnapshotItemsTableTableManager get roomSnapshotItems =>
+      $$RoomSnapshotItemsTableTableManager(_db, _db.roomSnapshotItems);
 }

@@ -6,39 +6,63 @@ import 'package:hermes/page/room/Model.dart';
 import 'package:provider/provider.dart';
 import 'package:toast/toast.dart';
 
+enum FieldType{
+  Money,
+  Meter
+}
 
 class RoomFeeForm extends StatelessWidget {
   final ScrollController _scrollController = ScrollController();
 
   final _formKey = GlobalKey<FormBuilderState>();
+  final _electMetersFieldKey = GlobalKey<FormBuilderFieldState>();
+  final _waterMetersFieldKey = GlobalKey<FormBuilderFieldState>();
   final _rentFieldKey = GlobalKey<FormBuilderFieldState>();
   final _electFieldKey = GlobalKey<FormBuilderFieldState>();
   final _waterFieldKey = GlobalKey<FormBuilderFieldState>();
 
   final _subFormKey = GlobalKey<FormBuilderState>();
 
+
+
   Widget _formFeeField(
-      {Key? key,
-      required String name,
-      required String title,
-      String unit = "元"}) {
+      {
+        Key? key,
+        required String name,
+        required String title,
+        String unit = "元",
+        FieldType fieldType=FieldType.Money
+      }) {
+    var regExp = fieldType == FieldType.Money ? RegExp(r'[.0-9\-]') : RegExp(r'[0-9]');
+    var validators = [
+      FormBuilderValidators.required(errorText: "该项必填"),
+
+    ];
+    if(fieldType==FieldType.Meter){
+      validators.add(FormBuilderValidators.min(0,errorText: "必须大于等于1"));
+    }else{
+      validators.add(FormBuilderValidators.numeric(errorText: "必须是有效的数值"));
+    }
     return FormBuilderTextField(
       key: key,
       name: name,
       keyboardType: TextInputType.number,
       inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[\.0-9\-]'))
+        FilteringTextInputFormatter.allow(regExp)
       ],
       validator: FormBuilderValidators.compose([
         FormBuilderValidators.required(errorText: "该项必填"),
-        FormBuilderValidators.numeric(errorText: "必须是有效的数值")
+        FormBuilderValidators.numeric(errorText: "必须是有效的数值"),
+        FormBuilderValidators.min(0,errorText: "必须大于等于1"),
       ]),
       onTap: (){
-        String? val = _formKey.currentState?.getRawValue(name);
-        if(val!=null ){
-          var v= double.tryParse(val);
-          if(v==0){
-            _formKey.currentState?.fields[name]?.didChange("");
+        if(fieldType==FieldType.Money) {
+          String? val = _formKey.currentState?.getRawValue(name);
+          if (val != null) {
+            var v = double.tryParse(val);
+            if (v == 0) {
+              _formKey.currentState?.fields[name]?.didChange("");
+            }
           }
         }
       },
@@ -149,7 +173,7 @@ class RoomFeeForm extends StatelessWidget {
                   style: TextStyle(fontSize: 17, color: Colors.red),
                 ),
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all(RoundedRectangleBorder(
+                  shape: WidgetStateProperty.all(RoundedRectangleBorder(
                       side: BorderSide(color: Colors.red.shade400),
                       borderRadius: BorderRadius.circular(18.67))),
                 ),
@@ -198,7 +222,7 @@ class RoomFeeForm extends StatelessWidget {
           onWillPop: onWillTap,
           child: Scaffold(
             appBar: AppBar(
-              title: Text("修改套间费用"),
+              title: Text("修改套间设置"),
             ),
             body: SingleChildScrollView(
               child: FormBuilder(
@@ -208,6 +232,12 @@ class RoomFeeForm extends StatelessWidget {
                     margin: EdgeInsets.only(left: 10, top: 10, right: 10),
                     child: Column(
                       children: [
+                        _formFeeField(
+                            key: _electMetersFieldKey, name: 'electMeters', title: '电表',unit: "个"),
+                        const SizedBox(height: 10),
+                        _formFeeField(
+                            key: _waterMetersFieldKey, name: 'waterMeters', title: '水表',unit: "个"),
+                        const SizedBox(height: 10),
                         _formFeeField(
                             key: _rentFieldKey, name: 'rent', title: '租金'),
                         const SizedBox(height: 10),

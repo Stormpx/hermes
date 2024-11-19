@@ -90,6 +90,10 @@ class Rooms extends Table {
 
   IntColumn get sort => integer().nullable().withDefault(Constant(99))();
 
+  IntColumn get electMeters => integer().nullable().withDefault(Constant(1))();
+
+  IntColumn get waterMeters => integer().nullable().withDefault(Constant(1))();
+
   RealColumn get rent => real().nullable().withDefault(Constant(0))();
 
   RealColumn get electFee => real().nullable().withDefault(Constant(0))();
@@ -116,13 +120,15 @@ class RoomDays extends Table {
 
   DateTimeColumn get date => dateTime()();
 
+  IntColumn get seq => integer().withDefault(Constant(1))();
+
   RealColumn get elect => real().nullable().withDefault(Constant(0))();
 
   RealColumn get water => real().nullable().withDefault(Constant(0))();
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {roomId, date}
+        {roomId, date,seq}
       ];
 }
 
@@ -184,7 +190,7 @@ class HermesDatabase extends _$HermesDatabase {
   // you should bump this number whenever you change or add a table definition.
   // Migrations are covered later in the documentation.
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
@@ -197,6 +203,14 @@ class HermesDatabase extends _$HermesDatabase {
       if (from <= 4) {
         await m.alterTable(TableMigration(roomSnapshots,
             newColumns: [roomSnapshots.elect, roomSnapshots.water]));
+      }
+      if(from<6){
+        await m.alterTable(TableMigration(rooms,
+          newColumns: [rooms.electMeters,rooms.waterMeters] ,
+        ));
+        await m.alterTable(TableMigration(roomDays,
+          newColumns: [roomDays.seq] ,
+        ));
       }
     });
   }

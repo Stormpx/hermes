@@ -12,7 +12,6 @@ import 'package:hermes/component/InitializingPage.dart';
 import 'package:hermes/model/Database.dart';
 import 'package:hermes/model/Repository.dart';
 import 'package:hermes/page/option/ExtOptionDrawer.dart';
-import 'package:hermes/page/OptionButton.dart';
 import 'package:hermes/page/building/BuildingListModel.dart';
 import 'package:hermes/page/floor/FloorListPage.dart';
 import 'package:hermes/page/floor/FloorModel.dart';

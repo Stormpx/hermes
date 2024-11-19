@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_printer/flutter_printer.dart';
+import 'package:hermes/App.dart';
 import 'package:hermes/HermesState.dart';
 import 'package:hermes/page/Rebuild.dart';
 import 'package:hermes/page/import/Import.dart';
@@ -23,6 +24,7 @@ class ExtOptionDrawerState extends HermesState<ExtOptionDrawer> {
     return ChangeNotifierProvider(create: (context) => ExtOptModel(),
       child: Consumer<ExtOptModel>(
         builder: (ctx,model,child){
+          ToastContext().init(ctx);
           return Drawer(
             child: ListView(
               children: [
@@ -46,8 +48,8 @@ class ExtOptionDrawerState extends HermesState<ExtOptionDrawer> {
                           fontSize: 17)),
                   leading: Icon(Icons.import_export_outlined, color: Colors.black,),
                   onTap: () async{
-                    var status=await Permission.storage.request();
-                    if(!status.isGranted){
+                    if(!(await App.grantStoragePermission())){
+                      Toast.show("获取文件访问权限失败", duration: 2,gravity: Toast.bottom);
                       return;
                     }
                     await model.exportDatabase();

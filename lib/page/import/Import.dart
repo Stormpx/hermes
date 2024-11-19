@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_printer/flutter_printer.dart';
+import 'package:hermes/App.dart';
 import 'package:hermes/HermesState.dart';
 import 'package:hermes/component/FloatButton.dart';
 import 'package:hermes/component/InitializingWidget.dart';
@@ -84,8 +85,8 @@ class _ImportState extends HermesState<Import> {
                         ),
                         Flexible(
                           child: RadioListTile<int>(title: Text("文件路径"),value: 1, groupValue: model.way, onChanged: (value)async{
-                            var status=await Permission.storage.request();
-                            if(!status.isGranted){
+                            if(!(await App.grantStoragePermission())){
+                              Toast.show("获取文件访问权限失败", duration: 2,gravity: Toast.bottom);
                               return;
                             }
                             model.setWay(value!);

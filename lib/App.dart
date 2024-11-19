@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_printer/flutter_printer.dart';
 import 'package:hermes/model/Database.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as p;
 class App {
@@ -78,6 +80,20 @@ class App {
     return Directory(Uri.file(downloadDirectory!.path).resolve(dir??"").toFilePath(windows: Platform.isWindows));
   }
 
+  static Future<bool> grantStoragePermission() async{
+    if(Platform.isAndroid){
+      var androidInfo = await DeviceInfoPlugin().androidInfo;
+      if(androidInfo.version.sdkInt>=30){
+        var status=await Permission.manageExternalStorage.request();
+        if(status.isGranted){
+          return true;
+        }
+      }
+      var status = await Permission.storage.request();
+      return status.isGranted;
+    }
+    return false;
+  }
 
   static Future<void> switchDatabase(File file)async{
     final dbFolder = await getApplicationDocumentsDirectory();
@@ -121,7 +137,7 @@ class App {
 
 }
 
-class Ver extends Comparable<Ver>{
+class Ver implements Comparable<Ver>{
   String version;
 
   Ver(this.version);

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_printer/flutter_printer.dart';
+import 'package:hermes/App.dart';
 import 'package:hermes/HermesState.dart';
 import 'package:hermes/component/InitializingPage.dart';
 import 'package:hermes/component/InitializingWidget.dart';
@@ -34,9 +35,9 @@ class RoomDetailState extends HermesState<RoomDetail> {
   double _fontSize = 15;
 
   void _captureContent(RoomModel model) async {
-    var status = await Permission.storage.request();
-    if (!status.isGranted) {
-      return null;
+    if(!(await App.grantStoragePermission())){
+      Toast.show("获取文件访问权限失败", duration: 2,gravity: Toast.bottom);
+      return;
     }
     // Permission
     RenderRepaintBoundary? boundary = _resultBlockKey.currentContext
@@ -177,7 +178,7 @@ class RoomDetailState extends HermesState<RoomDetail> {
     );
   }
 
-  Widget _feeField(String name, double fee, {String unit = "元"}) {
+  Widget _feeField(String name, dynamic fee, {String unit = "元"}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       // direction: Axis.horizontal,
@@ -237,7 +238,7 @@ class RoomDetailState extends HermesState<RoomDetail> {
                       Container(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          "套间费用",
+                          "套间设置",
                           style: TextStyle(fontSize: 20),
                         ),
                       ),
@@ -246,7 +247,7 @@ class RoomDetailState extends HermesState<RoomDetail> {
                         onPressed: () {
                           _enterFeeForm(model);
                         },
-                        label: Text("修改费用"),
+                        label: Text("修改设置"),
                       )
                     ],
                   ),
@@ -283,6 +284,10 @@ class RoomDetailState extends HermesState<RoomDetail> {
                       )),
                   child: Column(
                     children: [
+                      _feeField("电表", room?.room.electMeters ?? 1, unit: "个"),
+                      basicDivider(),
+                      _feeField("水表", room?.room.waterMeters ?? 1, unit: "个"),
+                      basicDivider(),
                       _feeField("租金", room?.room.rent ?? 0, unit: "元"),
                       basicDivider(),
                       _feeField("电费", room?.room.electFee ?? 1, unit: "(元/度)"),

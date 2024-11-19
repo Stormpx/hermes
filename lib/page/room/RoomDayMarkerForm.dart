@@ -27,14 +27,45 @@ class RoomDayMarkerState extends State<RoomDayMarker> {
   final ExpansionTileController expansionController=ExpansionTileController();
   bool _expanded = false;
 
-  double _elect = 0;
-  double _water = 0;
+  Map<int,RoomMeter> _tmpMeters={};
+
 
   DateTime? dayTapTime;
 
   void _saveTemp(MarkerBlock block) {
-    _elect = block.elect;
-    _water = block.water;
+    var meters = block.meters;
+    Map<int,RoomMeter> tmpMeters={};
+    for(int i=1;i<=meters;i++){
+      var meterGroup = block.roomMeters[i];
+      tmpMeters[i] = RoomMeter(meterGroup?.elect??0, meterGroup?.water??0);
+    }
+    _tmpMeters = tmpMeters;
+  }
+
+  void _pressCancel(MarkerBlock block) {
+    setState(() {
+      var meters = block.meters;
+      for (int i = 1; i <= meters; i++) {
+        var meter = _tmpMeters[i];
+        block.setValueBySeq(i, meter?.elect??0, meter?.water??0);
+      }
+      _edit = false;
+    });
+  }
+
+  void _pressSave(MarkerBlock block) async {
+    var validate = _formKey.currentState?.saveAndValidate();
+    debugPrint(_formKey.currentState?.value.toString());
+    if (!(validate ?? false)) {
+      return;
+    }
+    var val = _formKey.currentState?.value;
+    if (val == null) {
+      return;
+    }
+    await block.submit();
+    _edit = false;
+    FocusScope.of(context).unfocus();
   }
 
   @override
@@ -97,8 +128,8 @@ class RoomDayMarkerState extends State<RoomDayMarker> {
                   block.loadEvents(date);
                 },
                 eventLoader: (day) {
-                  var rday = block.roomModel?.getRoomDay(day);
-                  return rday == null ? [] : [rday];
+                  bool marked = block.roomModel?.isDayMarked(day)??false;
+                  return marked?[1]:[];
                 },
                 calendarBuilders: CalendarBuilders(
                   todayBuilder: (context, date, _) {
@@ -183,28 +214,7 @@ class RoomDayMarkerState extends State<RoomDayMarker> {
     ));
   }
 
-  void _pressCancel(MarkerBlock block) {
-    setState(() {
-      block.elect = _elect;
-      block.water = _water;
-      _edit = false;
-    });
-  }
 
-  void _pressSave(MarkerBlock block) async {
-    var validate = _formKey.currentState?.saveAndValidate();
-    debugPrint(_formKey.currentState?.value.toString());
-    if (!(validate ?? false)) {
-      return;
-    }
-    var val = _formKey.currentState?.value;
-    if (val == null) {
-      return;
-    }
-    await block.submit();
-    _edit = false;
-    FocusScope.of(context).unfocus();
-  }
 
   Widget _editingButtonGroup(MarkerBlock block) {
     return Row(
@@ -250,82 +260,98 @@ class RoomDayMarkerState extends State<RoomDayMarker> {
   }
 
   Widget _editingForm(MarkerBlock block) {
+    var meters = block.meters;
     return FormBuilder(
       key: _formKey,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: 60),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Expanded(
-              child: FormBuilderTextField(
-                key: _electFieldKey,
-                name: 'elect',
-                controller: block.electController,
-                autofocus: _edit,
-                maxLines: 1,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\.0-9\-+]'))
-                ],
-                validator: FormBuilderValidators.compose([
-                  FormBuilderValidators.required(),
-                  ExprValidator(errorText: "必须是有效的表达式").validate,
-                ]),
-                style: TextStyle(color: Colors.black),
-                enabled: _edit,
-                textAlign: TextAlign.center,
-                textAlignVertical: TextAlignVertical.bottom,
-                decoration: InputDecoration(
-                  border: UnderlineInputBorder(borderSide: BorderSide()),
-                  disabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey)),
-                  errorBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red)),
-                ),
-                onTap: () {
-                  if (block.elect == 0) {
-                    block.electController.text = "";
-                  }
-                },
+      child: Column(
+        children: [
+          for (int i = 1; i <= meters; i++)
+            _editingRow(block,i,block.meterController(i)),
+        ],
+      )
+    );
+  }
+
+  Widget _editingRow(MarkerBlock block,int seq,RoomMeterController meter){
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: 60),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+
+          Expanded(
+            child:  seq>block.electMeters?
+            Container()
+                :
+            FormBuilderTextField(
+              name: 'elect-$seq',
+              controller: meter.electController,
+              autofocus: _edit,
+              maxLines: 1,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\.0-9\-+]'))
+              ],
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+                ExprValidator(errorText: "必须是有效的表达式").validate,
+              ]),
+              style: TextStyle(color: Colors.black),
+              enabled: _edit,
+              textAlign: TextAlign.center,
+              textAlignVertical: TextAlignVertical.bottom,
+              decoration: InputDecoration(
+                border: UnderlineInputBorder(borderSide: BorderSide()),
+                disabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey)),
+                errorBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.red)),
               ),
+              onTap: () {
+                if (meter.elect == 0) {
+                  meter.electController.text = "";
+                }
+              },
             ),
-            Container(height: 20, child: VerticalDivider(color: Colors.grey)),
-            Expanded(
-              child: FormBuilderTextField(
-                key: _waterFieldKey,
-                name: 'water',
-                controller: block.waterController,
-                autofocus: false,
-                maxLines: 1,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\.0-9\-+]'))
-                ],
-                validator: FormBuilderValidators.compose([
-                  FormBuilderValidators.required(),
-                  ExprValidator(errorText: "必须是有效的表达式").validate,
-                ]),
-                style: TextStyle(color: Colors.black),
-                enabled: _edit,
-                textAlign: TextAlign.center,
-                textAlignVertical: TextAlignVertical.bottom,
-                decoration: InputDecoration(
-                  border: UnderlineInputBorder(borderSide: BorderSide()),
-                  disabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey)),
-                  errorBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red)),
-                ),
-                onTap: () {
-                  if (block.water == 0) {
-                    block.waterController.text = "";
-                  }
-                },
+          ),
+          Container(height: 20, child: VerticalDivider(color: Colors.grey)),
+          Expanded(
+            child: seq>block.waterMeters?
+            Container()
+                :
+            FormBuilderTextField(
+              name: 'water-$seq',
+              controller: meter.waterController,
+              autofocus: false,
+              maxLines: 1,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\.0-9\-+]'))
+              ],
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+                ExprValidator(errorText: "必须是有效的表达式").validate,
+              ]),
+              style: TextStyle(color: Colors.black),
+              enabled: _edit,
+              textAlign: TextAlign.center,
+              textAlignVertical: TextAlignVertical.bottom,
+              decoration: InputDecoration(
+                border: UnderlineInputBorder(borderSide: BorderSide()),
+                disabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey)),
+                errorBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.red)),
               ),
+              onTap: () {
+                if (meter.water == 0) {
+                  meter.waterController.text = "";
+                }
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
