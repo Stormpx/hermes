@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:floating_draggable_widget/floating_draggable_widget.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -225,32 +226,36 @@ class _FloorListPageState extends HermesState<FloorListPage> {
       create: (c) => FloorModel(id),
       child: Consumer<FloorModel>(
         builder: (ctx, model, child) {
-          return Scaffold(
-            resizeToAvoidBottomInset: false,
-//        resizeToAvoidBottomPadding: false,
-            appBar: AppBar(
-              title: Text(name??"楼层列表"),
-            ),
-            floatingActionButton: FloatButton(
-              onPressed: () {
-                showDialog(
-                    context: context,
-                    builder: (ctx) {
-                      return _floorForm(onSubmit: (data) async {
-                        var name = data["name"] as String;
-                        if (await model.addFloor(name)) {
-                          Navigator.of(context).pop();
-                        }
+          return FloatingDraggableWidget(
+              mainScreenWidget: Scaffold(
+              resizeToAvoidBottomInset: false,
+              appBar: AppBar(
+                title: Text(name??"楼层列表"),
+              ),
+              body: GestureDetector(
+                  onTap: () {
+                    FocusScope.of(context).requestFocus(blankNode); //关键盘
+                    // Slidable.of(context)?.close();
+                  },
+                  child: _floorBuilder(model)),
+              ),
+              floatingWidget: FloatButton(
+                onPressed: () {
+                  showDialog(
+                      context: context,
+                      builder: (ctx) {
+                        return _floorForm(onSubmit: (data) async {
+                          var name = data["name"] as String;
+                          if (await model.addFloor(name)) {
+                            Navigator.of(context).pop();
+                          }
+                        });
                       });
-                    });
-              },
-            ),
-            body: GestureDetector(
-                onTap: () {
-                  FocusScope.of(context).requestFocus(blankNode); //关键盘
-                  // Slidable.of(context)?.close();
                 },
-                child: _floorBuilder(model)),
+              ),
+              floatingWidgetWidth: 60,
+              floatingWidgetHeight: 60,
+              speed: 80,
           );
         },
       ),

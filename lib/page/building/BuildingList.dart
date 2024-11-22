@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:floating_draggable_widget/floating_draggable_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_printer/flutter_printer.dart';
@@ -51,30 +52,34 @@ class _BuildingListState extends HermesState<BuildingListPage> {
                   value: model!,
                   child: Consumer<BuildingListModel?>(
                       builder: (ctx, model, child) {
-                    return Scaffold(
-                      resizeToAvoidBottomInset: false,
-//        resizeToAvoidBottomPadding: false,
-                      appBar: AppBar(
-                        title: Text("建筑列表"),
-                      ),
-                      drawer: ExtOptionDrawer(),
-                      drawerEdgeDragWidth: MediaQuery.of(context).size.width/2,
-                      onDrawerChanged: (open) {
-                        if (!open) {
-                          model.reload();
-                        }
-                      },
-                      floatingActionButton: FloatButton(
-                        onPressed: () {
-                          _addNewBuilding(model!);
-                        },
-                      ),
-                      body: GestureDetector(
-                          onTap: () {
-                            FocusScope.of(context).requestFocus(blankNode); //关键盘
-                          },
-                          child: buildingList(model!)),
-                    );
+                        return FloatingDraggableWidget(
+                          mainScreenWidget: Scaffold(
+                            resizeToAvoidBottomInset: false,
+                            appBar: AppBar(
+                              title: Text("建筑列表"),
+                            ),
+                            drawer: ExtOptionDrawer(),
+                            drawerEdgeDragWidth: MediaQuery.of(context).size.width/2,
+                            onDrawerChanged: (open) {
+                              if (!open) {
+                                model.reload();
+                              }
+                            },
+                            body: GestureDetector(
+                                onTap: () {
+                                  FocusScope.of(context).requestFocus(blankNode); //关键盘
+                                },
+                                child: buildingList(model!)),
+                          ),
+                          floatingWidget: FloatButton(
+                            onPressed: () {
+                              _addNewBuilding(model);
+                            },
+                          ),
+                          floatingWidgetWidth: 60,
+                          floatingWidgetHeight: 60,
+                          speed: 80,
+                        );
                   }));
             },
           );
