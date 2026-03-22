@@ -1,19 +1,10 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:archive/archive.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:hermes/App.dart';
-import 'package:hermes/kit/Util.dart';
 import 'package:hermes/model/Data.dart';
 import 'package:hermes/model/Database.dart';
 import 'package:hermes/model/Repository.dart';
 import 'package:toast/toast.dart';
-import 'package:uuid/uuid.dart';
 import 'package:flutter_printer/flutter_printer.dart';
 
 class FloorModel extends ChangeNotifier {

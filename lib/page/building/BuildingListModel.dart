@@ -2,7 +2,6 @@
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:hermes/model/Database.dart';
 import 'package:hermes/model/Repository.dart';
 
@@ -12,6 +11,8 @@ class BuildingListModel  extends ChangeNotifier{
 
 
   List<Building> buildings=[];
+  Map<int, int> floorCounts={};
+  Map<int, int> roomCounts={};
 
 
   BuildingListModel(){
@@ -21,13 +22,32 @@ class BuildingListModel  extends ChangeNotifier{
 
     buildings = (await repository.findAll());
     buildings.sort((a,b)=>a.sort??99.compareTo(b.sort??99));
+    await _loadCounts();
     return this;
+  }
+
+  Future<void> _loadCounts() async {
+    floorCounts = {};
+    roomCounts = {};
+    for (final building in buildings) {
+      if (building.id == null) continue;
+      final floors = await Repo.floorRepository.findAllByBuilding(building.id!);
+      floorCounts[building.id!] = floors.length;
+      int totalRooms = 0;
+      for (final f in floors) {
+        totalRooms += f.rooms.length;
+      }
+      roomCounts[building.id!] = totalRooms;
+    }
   }
 
   Future<void> reload()async{
     await init();
     notifyListeners();
   }
+
+  int getFloorCount(int? buildingId) => floorCounts[buildingId] ?? 0;
+  int getRoomCount(int? buildingId) => roomCounts[buildingId] ?? 0;
 
   void buildingReorder(int oldIndex, int newIndex) async{
     // if(oldIndex<newIndex){
@@ -55,6 +75,10 @@ class BuildingListModel  extends ChangeNotifier{
     building = await Repo.buildingRepository.save(building);
 
     buildings.add(building);
+    if (building.id != null) {
+      floorCounts[building.id!] = 0;
+      roomCounts[building.id!] = 0;
+    }
     notifyListeners();
   }
 
@@ -70,6 +94,8 @@ class BuildingListModel  extends ChangeNotifier{
       await Repo.buildingRepository.del(building.id!);
     });
     buildings.remove(building);
+    floorCounts.remove(building.id);
+    roomCounts.remove(building.id);
     notifyListeners();
   }
 

@@ -2,25 +2,40 @@
 
 class FloatButton extends StatelessWidget {
 
-  VoidCallback onPressed;
+  final VoidCallback onPressed;
 
-  Icon? icon;
+  final Icon? icon;
 
-  FloatButton({required this.onPressed, this.icon})
-  ;
+  const FloatButton({super.key, required this.onPressed, this.icon});
 
   @override
    Widget build(BuildContext context) {
      return Container(
-       width: 60,
-       height: 60,
+       width: 56,
+       height: 56,
        decoration: BoxDecoration(
-           color: Colors.lightBlueAccent, shape: BoxShape.circle),
+         borderRadius: BorderRadius.circular(16),
+         gradient: const LinearGradient(
+           begin: Alignment.topLeft,
+           end: Alignment.bottomRight,
+           colors: [
+             Color(0xFF002D1C),
+             Color(0xFF00452E),
+           ],
+         ),
+         boxShadow: const [
+           BoxShadow(
+             color: Color(0x1F1A1C1A),
+             offset: Offset(0, 12),
+             blurRadius: 32,
+           ),
+         ],
+       ),
        child: IconButton(
-           icon: icon??Icon(
+           icon: icon??const Icon(
              Icons.add,
              color: Colors.white,
-             size: 30,
+             size: 20,
            ),
            onPressed: onPressed),
      );

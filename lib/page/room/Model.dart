@@ -316,6 +316,7 @@ class RoomModel extends ChangeNotifier {
       totalAmount += opt.fee ?? 0;
       list.add(FeeItem.get(opt.name, null, opt.fee ?? 0));
     });
+    totalAmount = double.parse(totalAmount.toStringAsFixed(2));
     list.add(FeeItem.get("总收费", null, totalAmount));
 
     return FeeResult(
@@ -335,8 +336,8 @@ class RoomModel extends ChangeNotifier {
   Future<void> saveFeeSnapshot(FeeResult result) async {
     var snapshot = RoomSnapshot(
         roomId: id,
-        snapshotStartDate: result.mainDate,
-        snapshotEndDate: result.subDate,
+        snapshotStartDate: result.subDate,
+        snapshotEndDate: result.mainDate,
         rent: result.rent,
         electFee: result.elect,
         waterFee: result.water,
@@ -390,6 +391,25 @@ class FeeResult {
       required this.totalAmount,
       required this.items}) {}
 
+  String get startDate => Util.formatDay(subDate);
+  String get endDate => Util.formatDay(mainDate);
+
+  factory FeeResult.fromSnapshotRecord(String name,RoomSnapshotRecord record){
+    final snapshot =record.snapshot;
+    return FeeResult(
+      name: name,
+      subDate: snapshot.snapshotStartDate,
+      mainDate: snapshot.snapshotEndDate,
+      rent: snapshot.rent??0,
+      elect: snapshot.electFee??0,
+      water: snapshot.waterFee??0,
+      usedElect: snapshot.elect??0,
+      usedWater: snapshot.water??0,
+      totalAmount: snapshot.totalAmount??0,
+      items: record.items.map((e) => FeeItem.fromSnapshotItem(e)).toList(),
+    );
+  }
+
   @override
   String toString() {
     return 'FeeResult{name: $name, mainDate: $mainDate, subDate: $subDate, rent: $rent, elect: $elect, water: $water, totalAmount: $totalAmount, items: $items}';
@@ -425,22 +445,31 @@ class RoomFeeFormModel extends ChangeNotifier {
 
   RoomFeeFormModel(this.room, this.optFees);
 
-  Map<String, dynamic> initFormValue() {
+  Map<String, dynamic> initMeteringFormValue() {
     Map<String, dynamic> value = {
       'electMeters': (room.electMeters ?? 1).toString(),
       'waterMeters': (room.waterMeters ?? 1).toString(),
+    };
+    return value;
+  }
+  Map<String, dynamic> initFixedFormValue() {
+    Map<String, dynamic> value = {
       'rent': (room.rent ?? 0).toString(),
       'elect': (room.electFee ?? 0).toString(),
       'water': (room.waterFee ?? 0).toString(),
     };
+    return value;
+  }
+  Map<String, dynamic> initAddonsFormValue() {
+    Map<String, dynamic> value = {};
     optFees.forEach((opt) {
       value[opt.name] = (opt.fee ?? 0).toString();
     });
     return value;
   }
 
-  void addOpt(String name) {
-    optFees.add(RoomOption(roomId: room.id!, name: name, fee: 0));
+  void addOpt(String name,double fee) {
+    optFees.add(RoomOption(roomId: room.id!, name: name, fee: fee));
     notifyListeners();
   }
 
@@ -485,9 +514,10 @@ class RoomFeeFormModel extends ChangeNotifier {
 
 class RoomSnapshotModel extends ChangeNotifier {
   int id;
+  String name;
   List<RoomSnapshotRecord> records = [];
 
-  RoomSnapshotModel(this.id) {
+  RoomSnapshotModel(this.id,this.name) {
     _init();
   }
 
@@ -533,4 +563,95 @@ class RoomSnapshotModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+}
+
+
+class MeterReadings{
+  double current;
+  double previous;
+
+  MeterReadings(this.current, this.previous);
+
+  static MeterReadings parse(String desc){
+    var lines = desc.split('\n');
+    double current = 0;
+    double previous = 0;
+
+    if (lines.isNotEmpty) {
+      final parts = lines[0].split('=');
+      if (parts.length >= 2) {
+        final readings = parts[0].trim().split('-');
+        if (readings.length >= 2) {
+          current = double.tryParse(readings[0].trim()) ?? 0;
+          previous = double.tryParse(readings[1].trim()) ?? 0;
+        }
+      }
+    }
+    return MeterReadings(current,previous);
+  }
+}
+
+class RoomBillModel extends ChangeNotifier{
+  int id;
+  FeeResult feeResult;
+  List<MeterReadings> electricItems = [];
+  List<MeterReadings> waterItems = [];
+
+
+
+  RoomBillModel(this.id, this.feeResult){
+    this.electricItems = feeResult.items
+        .where((item) => item.name.startsWith('电表'))
+        .map((item)=>MeterReadings.parse(item.desc??""))
+        .toList();
+    this.waterItems = feeResult.items
+        .where((item) => item.name.startsWith('水表'))
+        .map((item)=>MeterReadings.parse(item.desc??""))
+        .toList();
+  }
+
+  List<FeeItem> get items => feeResult.items
+      .map((item){
+        String? subtitle;
+        if (item.desc != null && item.desc!.contains('\n')) {
+          final lines = item.desc!.split('\n');
+          if (lines.length >= 2) {
+            subtitle = lines[1].split('=').first.trim();
+          }
+        }
+        return FeeItem(name: item.name,desc: subtitle??item.desc,fee: item.fee);
+      })
+      .take(feeResult.items.length-1)
+      .toList();
+
+  void capturePng(Uint8List pngBytes) async {
+    var dir = App.dir(dir: "screenshot/");
+    if (!await dir.exists()) await dir.create(recursive: true);
+    var file = File("${dir.path}${Uuid().v4()}.png");
+    file = await file.writeAsBytes(pngBytes, flush: true);
+    Printer.info(file.path);
+    Share.shareXFiles([XFile(file.path)], text: "截图");
+  }
+
+  Future<void> doSave() async {
+    final result = feeResult;
+    var snapshot = RoomSnapshot(
+        roomId: id,
+        snapshotStartDate: result.subDate,
+        snapshotEndDate: result.mainDate,
+        rent: result.rent,
+        electFee: result.elect,
+        waterFee: result.water,
+        elect: result.usedElect,
+        water: result.usedWater,
+        totalAmount: result.totalAmount);
+    var items = result.items
+        .map((e) => RoomSnapshotItem(
+        roomId: id, snapshotId: -1, name: e.name, desc: e.desc, fee: e.fee))
+        .toList();
+
+    await Repo.roomRepository.runOnScope(() =>
+        Repo.roomRepository.saveSnapshot(RoomSnapshotRecord(snapshot, items)));
+  }
+
 }

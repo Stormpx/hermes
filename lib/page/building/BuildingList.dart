@@ -11,11 +11,10 @@ import 'package:hermes/HermesState.dart';
 import 'package:hermes/component/FloatButton.dart';
 import 'package:hermes/component/InitializingPage.dart';
 import 'package:hermes/model/Database.dart';
-import 'package:hermes/model/Repository.dart';
 import 'package:hermes/page/option/ExtOptionDrawer.dart';
 import 'package:hermes/page/building/BuildingListModel.dart';
 import 'package:hermes/page/floor/FloorListPage.dart';
-import 'package:hermes/page/floor/FloorModel.dart';
+import 'package:hermes/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:toast/toast.dart';
 
@@ -54,8 +53,10 @@ class _BuildingListState extends HermesState<BuildingListPage> {
                       builder: (ctx, model, child) {
                         return FloatingDraggableWidget(
                           mainScreenWidget: Scaffold(
-                            resizeToAvoidBottomInset: false,
-                            appBar: AppBar(
+                          backgroundColor: AppColors.surface,
+                          resizeToAvoidBottomInset: false,
+                          appBar: AppBar(
+                            backgroundColor: AppColors.surface,
                               title: Text("建筑列表"),
                             ),
                             drawer: ExtOptionDrawer(),
@@ -67,7 +68,7 @@ class _BuildingListState extends HermesState<BuildingListPage> {
                             },
                             body: GestureDetector(
                                 onTap: () {
-                                  FocusScope.of(context).requestFocus(blankNode); //关键盘
+                                  FocusScope.of(context).requestFocus(blankNode);
                                 },
                                 child: buildingList(model!)),
                           ),
@@ -88,13 +89,23 @@ class _BuildingListState extends HermesState<BuildingListPage> {
     );
   }
 
+  String _getInitials(String name) {
+    if (name.isEmpty) return '';
+    final runes = name.runes.toList();
+    if (runes.length <= 2) return name;
+    return String.fromCharCodes(runes, 0, 2);
+  }
+
+  Color _getAvatarColor(int index) => AppColors.avatarColors[index % AppColors.avatarColors.length];
+  Color _getAvatarTextColor(int index) => AppColors.avatarTextColors[index % AppColors.avatarTextColors.length];
+
   Widget buildingList(BuildingListModel model) {
     var list = model.buildings;
     if (!start) {
       start = true;
       if (list.length == 1) {
         Timer(Duration(milliseconds: 300), () {
-          _enterBuilding(context, list[0]);
+          _enterBuilding(context, model,list[0]);
         });
       }
     }
@@ -103,6 +114,7 @@ class _BuildingListState extends HermesState<BuildingListPage> {
           scrollDirection: Axis.vertical,
           scrollController: _scrollController,
           buildDefaultDragHandles: false,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           itemBuilder: (context, index) {
             var building = list[index];
             var key = ObjectKey(building);
@@ -134,19 +146,16 @@ class _BuildingListState extends HermesState<BuildingListPage> {
                       })
                 ],
               ),
-              child: ListTile(
-                subtitle: Text("placeholder"),
-                trailing: ReorderableDragStartListener(
-                  index: index,
-                  child: Icon(Icons.list),
-                ),
-                title: Text(
-                  building.name,
-                  softWrap: false,
-                  overflow: TextOverflow.fade,
-                  style: TextStyle(fontSize: 18.0),
-                ),
-                onTap: () => _enterBuilding(context, building),
+              child: _BuildingCard(
+                building: building,
+                index: index,
+                floorCount: model.getFloorCount(building.id),
+                roomCount: model.getRoomCount(building.id),
+                onTap: () => _enterBuilding(context, model,building),
+                onDrag: ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle, color: AppColors.outlineVariant)),
+                avatarColor: _getAvatarColor(index),
+                avatarTextColor: _getAvatarTextColor(index),
+                initials: _getInitials(building.name),
               ),
             );
           },
@@ -159,7 +168,7 @@ class _BuildingListState extends HermesState<BuildingListPage> {
     );
   }
 
-  void _enterBuilding(BuildContext context, Building building) async {
+  void _enterBuilding(BuildContext context, BuildingListModel model,Building building) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -167,6 +176,7 @@ class _BuildingListState extends HermesState<BuildingListPage> {
           settings: RouteSettings(
               arguments: {"buildingId": building.id, "name": building.name})),
     );
+    await model.reload();
   }
 
   void _addNewBuilding(BuildingListModel model) async {
@@ -194,8 +204,152 @@ class _BuildingListState extends HermesState<BuildingListPage> {
     Printer.info(r);
     if (r != null) {
       model.updateBuilding(r["name"] as String, building);
-      // model.saveNewBuilding(Building(name: r["name"] as String));
     }
+  }
+}
+
+class _BuildingCard extends StatelessWidget {
+  final Building building;
+  final int index;
+  final int floorCount;
+  final int roomCount;
+  final VoidCallback onTap;
+  final Widget onDrag;
+  final Color avatarColor;
+  final Color avatarTextColor;
+  final String initials;
+
+  const _BuildingCard({
+    required this.building,
+    required this.index,
+    required this.floorCount,
+    required this.roomCount,
+    required this.onTap,
+    required this.onDrag,
+    required this.avatarColor,
+    required this.avatarTextColor,
+    required this.initials,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                _buildAvatar(),
+                const SizedBox(width: 16),
+                Expanded(child: _buildInfo()),
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right, color: AppColors.outlineVariant, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: avatarColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: TextStyle(
+            color: avatarTextColor,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Manrope',
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                building.name,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Manrope',
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            _buildBadge(),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            _buildStatItem(Icons.layers_outlined, '$floorCount 楼层'),
+            const SizedBox(width: 16),
+            _buildStatItem(Icons.home_outlined, '$roomCount 单元'),
+            const Spacer(),
+            onDrag,
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.badgeGreen,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Text(
+        '运行中',
+        style: TextStyle(
+          color: AppColors.badgeGreenText,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: AppColors.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: const TextStyle(
+            color: AppColors.onSurfaceVariant,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Inter',
+          ),
+        ),
+      ],
+    );
   }
 }
 

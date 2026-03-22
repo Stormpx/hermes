@@ -171,7 +171,7 @@ class RoomsDao extends BaseDao<Room,RoomRepository> with _$RoomsDaoMixin impleme
       select(roomSnapshots)
         ..where((tbl) => tbl.roomId.equals(roomId))
         ..orderBy([
-              (u)=>OrderingTerm(expression: roomSnapshots.snapshotStartDate,mode: OrderingMode.desc)
+              (u)=>OrderingTerm(expression: u.snapshotEndDate,mode: OrderingMode.desc)
         ])
     ).get();
 

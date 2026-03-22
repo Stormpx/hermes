@@ -14,8 +14,10 @@ import 'package:hermes/model/Data.dart';
 import 'package:hermes/model/Database.dart';
 import 'package:hermes/page/room/FeeItemDataTable.dart';
 import 'package:hermes/page/room/Model.dart';
+import 'package:hermes/page/room/RoomBill.dart';
 import 'package:hermes/page/room/RoomDayMarkerForm.dart';
 import 'package:hermes/page/room/RoomFeeForm.dart';
+import 'package:hermes/page/room/RoomReading.dart';
 import 'package:hermes/page/room/RoomSanpshotsList.dart';
 import 'package:hermes/page/room/RoomSnapshotChart.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -23,6 +25,7 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:toast/toast.dart';
 
+@Deprecated("")
 class RoomDetail extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
@@ -53,7 +56,7 @@ class RoomDetailState extends HermesState<RoomDetail> {
       context,
       MaterialPageRoute(
         builder: (c) => ChangeNotifierProvider(
-            create: (create) => RoomSnapshotModel(model.id),
+            create: (create) => RoomSnapshotModel(model.id,model.title??""),
             child: DefaultTabController(
               length: 2,
               child: Scaffold(
@@ -153,6 +156,36 @@ class RoomDetailState extends HermesState<RoomDetail> {
                                       _fontSize = val;
                                       model.flush();
                                     },
+                                  ),
+                                  TextButton.icon(
+                                    icon: Icon(Icons.edit),
+                                    onPressed: () {
+                                      var id = model.id;
+                                      var fee = model.calculateResult();
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (c) => RoomReading(),
+                                          settings: RouteSettings(arguments: model),
+                                        ),
+                                      );
+                                    },
+                                    label: Text("生成账单"),
+                                  ),
+                                  TextButton.icon(
+                                    icon: Icon(Icons.edit),
+                                    onPressed: () {
+                                      var id = model.id;
+                                      var fee = model.calculateResult();
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (c) => RoomBill(),
+                                          settings: RouteSettings(arguments: {"roomId": id, "feeResult": fee}),
+                                        ),
+                                      );
+                                    },
+                                    label: Text("查看账单"),
                                   ),
                                   _ResultBlock(
                                     resultBlockKey: _resultBlockKey,
