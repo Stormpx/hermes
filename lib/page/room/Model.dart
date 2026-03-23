@@ -333,38 +333,6 @@ class RoomModel extends ChangeNotifier {
     );
   }
 
-  Future<void> saveFeeSnapshot(FeeResult result) async {
-    var snapshot = RoomSnapshot(
-        roomId: id,
-        snapshotStartDate: result.subDate,
-        snapshotEndDate: result.mainDate,
-        rent: result.rent,
-        electFee: result.elect,
-        waterFee: result.water,
-        elect: result.usedElect,
-        water: result.usedWater,
-        totalAmount: result.totalAmount);
-    var items = result.items
-        .map((e) => RoomSnapshotItem(
-            roomId: id, snapshotId: -1, name: e.name, desc: e.desc, fee: e.fee))
-        .toList();
-
-    await Repo.roomRepository.runOnScope(() =>
-        Repo.roomRepository.saveSnapshot(RoomSnapshotRecord(snapshot, items)));
-  }
-
-  void flush() {
-    notifyListeners();
-  }
-
-  void capturePng(Uint8List pngBytes) async {
-    var dir = App.dir(dir: "screenshot/");
-    if (!await dir.exists()) await dir.create(recursive: true);
-    var file = File("${dir.path}${Uuid().v4()}.png");
-    file = await file.writeAsBytes(pngBytes, flush: true);
-    Printer.info(file.path);
-    Share.shareXFiles([XFile(file.path)], text: "截图");
-  }
 }
 
 class FeeResult {
