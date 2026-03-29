@@ -438,6 +438,7 @@ class _FloorListPageState extends HermesState<FloorListPage> {
       child: ReorderableListView.builder(
         scrollDirection: Axis.vertical,
         scrollController: _scrollController,
+        padding: EdgeInsets.only(bottom: 75),
         buildDefaultDragHandles: false,
         itemBuilder: (context, index) {
           var floorWithRooms = list[index];
